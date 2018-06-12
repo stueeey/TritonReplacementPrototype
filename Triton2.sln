@@ -1,0 +1,60 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2000
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soei.Triton2.ConsoleClient", "src\Soei.Triton2.ConsoleClient\Soei.Triton2.ConsoleClient.csproj", "{407A603E-A149-4903-BB2E-BE5125F7A721}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soei.Triton2.Common", "src\Soei.Triton2.Common\Soei.Triton2.Common.csproj", "{C9903C6A-1454-48AF-AD2E-0BDA8AF4B248}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soei.Triton2.ServiceBus", "src\Soei.Triton2.ServiceBus\Soei.Triton2.ServiceBus.csproj", "{6F9376D1-0584-4090-B2E6-8D2200B949A7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soei.Triton2.ConsoleServer", "src\Soei.Triton2.ConsoleServer\Soei.Triton2.ConsoleServer.csproj", "{2971BC5C-FFD0-4D4D-8DCA-D5EDA11E5CE2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console Applications", "Console Applications", "{B49C39F3-B4C2-475A-8BEF-5D286B405B6B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{37CA121F-2CF7-4FD2-9CBF-2E8C7D534E52}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soei.Triton2.ServiceBus.Ninject", "src\Soei.Triton2.ServiceBus.Ninject\Soei.Triton2.ServiceBus.Ninject.csproj", "{8457027D-1C3A-49EE-8B52-179FA5244045}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{407A603E-A149-4903-BB2E-BE5125F7A721}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{407A603E-A149-4903-BB2E-BE5125F7A721}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{407A603E-A149-4903-BB2E-BE5125F7A721}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{407A603E-A149-4903-BB2E-BE5125F7A721}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9903C6A-1454-48AF-AD2E-0BDA8AF4B248}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9903C6A-1454-48AF-AD2E-0BDA8AF4B248}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9903C6A-1454-48AF-AD2E-0BDA8AF4B248}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9903C6A-1454-48AF-AD2E-0BDA8AF4B248}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F9376D1-0584-4090-B2E6-8D2200B949A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F9376D1-0584-4090-B2E6-8D2200B949A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F9376D1-0584-4090-B2E6-8D2200B949A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F9376D1-0584-4090-B2E6-8D2200B949A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2971BC5C-FFD0-4D4D-8DCA-D5EDA11E5CE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2971BC5C-FFD0-4D4D-8DCA-D5EDA11E5CE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2971BC5C-FFD0-4D4D-8DCA-D5EDA11E5CE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2971BC5C-FFD0-4D4D-8DCA-D5EDA11E5CE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8457027D-1C3A-49EE-8B52-179FA5244045}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8457027D-1C3A-49EE-8B52-179FA5244045}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8457027D-1C3A-49EE-8B52-179FA5244045}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8457027D-1C3A-49EE-8B52-179FA5244045}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{407A603E-A149-4903-BB2E-BE5125F7A721} = {B49C39F3-B4C2-475A-8BEF-5D286B405B6B}
+		{C9903C6A-1454-48AF-AD2E-0BDA8AF4B248} = {37CA121F-2CF7-4FD2-9CBF-2E8C7D534E52}
+		{6F9376D1-0584-4090-B2E6-8D2200B949A7} = {37CA121F-2CF7-4FD2-9CBF-2E8C7D534E52}
+		{2971BC5C-FFD0-4D4D-8DCA-D5EDA11E5CE2} = {B49C39F3-B4C2-475A-8BEF-5D286B405B6B}
+		{8457027D-1C3A-49EE-8B52-179FA5244045} = {37CA121F-2CF7-4FD2-9CBF-2E8C7D534E52}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FBDCED95-2FB8-4563-A50F-01287698A8B6}
+	EndGlobalSection
+EndGlobal

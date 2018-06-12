@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Soei.Triton2.ConsoleClient": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ServiceBusConnectionKey": "Endpoint=sb://tritonmessagebrokeraustralia.servicebus.windows.net/;SharedAccessKeyName=TestingSharedAccesskey;SharedAccessKey=4WbbTw7DVjGl+6a9hHcvsbqd2LhrJBq6INsIrTrXock="
+      }
+    }
+  }
+}
