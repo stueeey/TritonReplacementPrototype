@@ -15,7 +15,7 @@ using Soei.Triton2.ServiceBus.Ninject;
 
 namespace Soei.Triton2.ConsoleClient
 {
-	public class Program
+	public class ClientProgram
     {
 	    private static bool CommandEquals(string input, string command)
 	    {
@@ -29,22 +29,22 @@ namespace Soei.Triton2.ConsoleClient
 	        XmlConfigurator.Configure(logRepository, new FileInfo("Logging.config"));
 	        var container = SetupIoc();
 	        var client = container.Get<ITritonClient>();
+	        //client.LoadPlugins(new EchoPlugin());
 	        Console.Title = $"Client Console [{client.Identifier}]";
-	        RunClient(client);
+	        RunClient(client).Wait();
         }
 
-	    private static void RunClient(ITritonClient client)
+	    private static async Task RunClient(ITritonClient client)
 	    {
 		    var echoPlugin = client.GetPlugin<EchoPlugin>();
-		    Task.Run(async () => await client.RequestOwnershipOfAliasAsync("UK123", Guid.Empty));
+		    await client.RequestOwnershipOfAliasAsync("UK123", Guid.Empty);
 		    Console.WriteLine("Enter echo text:");
 		    while (true)
 		    {
 			    var command = Console.ReadLine();
 			    if (CommandEquals(command, "exit")) 
-				    continue;
-			    var echoContent = Console.ReadLine();
-			    Task.Run(async () => await echoPlugin.Echo(echoContent));
+				    return;
+			    await echoPlugin.Echo(command);
 		    }
 	    }
 

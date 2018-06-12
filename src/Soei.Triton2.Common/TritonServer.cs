@@ -22,5 +22,10 @@ namespace Soei.Triton2.Common
 	    {
 		    LoadCorePlugin();
 	    }
+
+	    public TritonServer(IServiceCommunicator communicator, PluginCollection tritonPluginsBase) : base(communicator, tritonPluginsBase.ToArray())
+	    {
+		    LoadCorePlugin();
+	    }
     }
 }

@@ -30,7 +30,10 @@ namespace Soei.Triton2.ConsoleClient
 
 		private void OnEchoRecieved(IMessage message, ref MessageReceivedEventArgs e)
 		{
+			if (message.Label != "Echo") 
+				return;
 			Console.WriteLine($"Server echo'd {message.Properties["Echo"]}");
+			e.Status = MessageStatus.Complete;
 		}
 	}
 }

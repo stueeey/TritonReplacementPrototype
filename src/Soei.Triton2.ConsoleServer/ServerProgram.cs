@@ -14,7 +14,7 @@ using Soei.Triton2.ServiceBus.Ninject;
 
 namespace Soei.Triton2.ConsoleServer
 {
-	class Program
+	class ServerProgram
     {
         static void Main(string[] args)
         {

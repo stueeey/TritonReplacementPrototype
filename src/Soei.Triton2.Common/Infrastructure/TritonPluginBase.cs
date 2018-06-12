@@ -1,10 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using log4net;
 
 namespace Soei.Triton2.Common.Infrastructure
 {
+	public class PluginCollection : List<TritonPluginBase>
+	{
+		public PluginCollection()
+		{
+		}
+
+		public PluginCollection(IEnumerable<TritonPluginBase> collection) : base(collection)
+		{
+		}
+	}
+
 	public abstract class TritonPluginBase
 	{
 		protected static ILog ClassLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{TritonConstants.LoggerPluginsPrefix}.{MethodBase.GetCurrentMethod().DeclaringType.Name}");
