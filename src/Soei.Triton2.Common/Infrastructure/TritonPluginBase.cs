@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using log4net;
+using Soei.Triton2.Common.Abstractions;
 
 namespace Soei.Triton2.Common.Infrastructure
 {

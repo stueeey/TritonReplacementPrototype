@@ -7,8 +7,8 @@ using log4net.Config;
 using Microsoft.Azure.ServiceBus;
 using Ninject;
 using Soei.Triton2.Common;
+using Soei.Triton2.Common.Abstractions;
 using Soei.Triton2.Common.Infrastructure;
-using Soei.Triton2.Common.Plugins;
 using Soei.Triton2.ServiceBus;
 using Soei.Triton2.ServiceBus.Ninject;
 

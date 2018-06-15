@@ -1,23 +1,31 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Soei.Triton2.Common.Abstractions;
 using Soei.Triton2.Common.Infrastructure;
 
 namespace Soei.Triton2.Common.Plugins
 {
     public class ServerCorePlugin : TritonPluginBase
     {
-		protected override async Task OnInitialized()
+	    private IRegistrationStorage _storage;
+	    public ServerCorePlugin(IRegistrationStorage storage)
+	    {
+			_storage = storage;
+	    }
+
+	    protected override async Task OnInitialized()
 		{
 			await base.OnInitialized();
 			Communicator.RegistrationReceived += OnRegistrationReceived;
-			Communicator.ServerJobReceived += ServerJobReceived;
+			Communicator.ServerJobReceived += AliasOwnershipRequestReceived;
 		}
 
 		public override void OnUninitialized()
 		{
 			base.OnUninitialized();
 			Communicator.RegistrationReceived -= OnRegistrationReceived;
-			Communicator.ServerJobReceived -= ServerJobReceived;
+			Communicator.ServerJobReceived -= AliasOwnershipRequestReceived;
 		}
 
 		private void OnRegistrationReceived(IMessage m, ref MessageReceivedEventArgs e)
@@ -25,17 +33,23 @@ namespace Soei.Triton2.Common.Plugins
 		    if (m.Label != TritonConstants.Registration) return;
 		    Console.WriteLine($"Received client message {m.Identifier} labelled {m.Label}");
 		    e.Status = MessageStatus.Complete;
-		    Communicator.SendToClientsAsync(Communicator.MessageFactory.CreateAcknowledgment(m));
+			if (_storage.SaveRegistration(Guid.Parse(m.ReplyToSession), m.Properties.ToDictionary(p => p.Key, p => p.Value.ToString())))
+				Communicator.SendToClientsAsync(Communicator.MessageFactory.CreateAcknowledgment(m));
 	    }
 
-	    private void ServerJobReceived(IMessage m, ref MessageReceivedEventArgs e)
+	    private void AliasOwnershipRequestReceived(IMessage m, ref MessageReceivedEventArgs e)
 	    {
 		    if (m.Label != "Request Alias Ownership") 
 			    return;
-		    var reply = MessageFactory.CreateAcknowledgment(m);
-		    reply.CopyPropertiesFrom(m, "Desired Alias", "Alias Token");
-		    Communicator.SendToClientsAsync(reply);
 		    e.Status = MessageStatus.Complete;
+		    if (_storage.CheckOwnership(m.GetProperty("Desired Alias"), Guid.Parse(m.GetProperty("Alias Token")), Guid.Parse(m.ReplyToSession)))
+		    {
+			    var reply = MessageFactory.CreateAcknowledgment(m);
+			    reply.CopyPropertiesFrom(m, "Desired Alias", "Alias Token");
+			    Communicator.SendToClientsAsync(reply);
+		    }
+			else
+			    Communicator.SendToClientsAsync(MessageFactory.CreateNegativeAcknowledgment(m));
 	    }
     }
 }

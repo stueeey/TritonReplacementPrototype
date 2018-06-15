@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Soei.Triton2.Common
+namespace Soei.Triton2.Common.Abstractions
 {
     public interface IMessage : ICloneable
     {

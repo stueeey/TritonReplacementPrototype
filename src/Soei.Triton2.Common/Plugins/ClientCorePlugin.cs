@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Soei.Triton2.Common.Abstractions;
 using Soei.Triton2.Common.Infrastructure;
 
 namespace Soei.Triton2.Common.Plugins
@@ -35,7 +36,7 @@ namespace Soei.Triton2.Common.Plugins
 	    {
 		    var message = MessageFactory.CreateNewMessage("Request Alias Ownership");
 		    message.Properties["Desired Alias"] = alias;
-		    message.Properties["Alias Token"] = token;
+		    message.Properties["Alias Token"] = token.ToString();
 		    message.TimeToLive = TimeSpan.FromSeconds(10);
 		    await Communicator.SendToServerAsync(message);
 		    var response = await Communicator.WaitForReplyTo(message);
@@ -45,7 +46,7 @@ namespace Soei.Triton2.Common.Plugins
 			    return Guid.Empty;
 		    }
 		    Logger.Warn($"Successfully got ownership of {alias}");
-		    var responseToken = (Guid) response.Properties["Alias Token"];
+		    var responseToken = Guid.Parse(response.GetProperty("Alias Token"));
 		    Communicator.State[alias] = responseToken;
 		    return responseToken;
 	    }

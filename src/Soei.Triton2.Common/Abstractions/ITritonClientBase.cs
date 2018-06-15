@@ -1,7 +1,7 @@
 ﻿using System;
 using Soei.Triton2.Common.Infrastructure;
 
-namespace Soei.Triton2.Common
+namespace Soei.Triton2.Common.Abstractions
 {
     public interface ITritonClientBase : IDisposable
     {

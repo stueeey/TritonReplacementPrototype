@@ -1,8 +1,7 @@
 ﻿using Ninject.Modules;
-using Ninject.Extensions.Conventions;
 using System;
-using System.Collections.Generic;
 using Soei.Triton2.Common;
+using Soei.Triton2.Common.Abstractions;
 using Soei.Triton2.Common.Infrastructure;
 using Soei.Triton2.ServiceBus.Communication;
 

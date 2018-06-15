@@ -1,5 +1,6 @@
 ﻿using System;
 using Soei.Triton2.Common;
+using Soei.Triton2.Common.Abstractions;
 using Soei.Triton2.Common.Infrastructure;
 
 namespace Soei.Triton2.ServiceBus
@@ -49,7 +50,7 @@ namespace Soei.Triton2.ServiceBus
 		    return response;
 	    }
 
-	    public IMessage NegativeAcknowledgment(IMessage receivedMessage)
+	    public IMessage CreateNegativeAcknowledgment(IMessage receivedMessage)
 	    {
 		    var response = CreateReply(receivedMessage);
 		    response.Label = TritonConstants.PositiveAcknowledgement;

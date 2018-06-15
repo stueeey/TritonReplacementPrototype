@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Soei.Triton2.Common.Abstractions;
 
 namespace Soei.Triton2.Common.Infrastructure
 {

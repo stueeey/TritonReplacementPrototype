@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Soei.Triton2.Common.Infrastructure;
 
-namespace Soei.Triton2.Common
+namespace Soei.Triton2.Common.Abstractions
 {
 	public delegate void OnMessageReceivedDelegate(IMessage message, ref MessageReceivedEventArgs e);
 	public delegate void PluginEventDelegate(string eventName, object state);

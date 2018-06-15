@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.Azure.ServiceBus;
 using Soei.Triton2.Common;
+using Soei.Triton2.Common.Abstractions;
 
 namespace Soei.Triton2.ServiceBus
 {

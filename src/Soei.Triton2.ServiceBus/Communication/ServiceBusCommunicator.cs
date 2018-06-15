@@ -8,6 +8,7 @@ using log4net;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Soei.Triton2.Common;
+using Soei.Triton2.Common.Abstractions;
 using Soei.Triton2.Common.Infrastructure;
 using Soei.Triton2.ServiceBus.Infrastructure;
 

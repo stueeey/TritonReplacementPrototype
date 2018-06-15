@@ -1,7 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
 using System.Text;
+using Soei.Triton2.Common.Abstractions;
 
 namespace Soei.Triton2.Common
 {
@@ -12,6 +12,13 @@ namespace Soei.Triton2.Common
 
 	    public static string GetMessageBodyAsString(this IMessage message) => Encoding.UTF8.GetString(message.Body);
 	    public static void SetMessageBodyAsString(this IMessage message, string body) => message.Body = Encoding.UTF8.GetBytes(body);
+
+	    public static string GetProperty(this IMessage message, string key)
+	    {
+			return message.Properties.TryGetValue(key, out var value) 
+				? value.ToString()
+				: null;
+	    }
 
 	    public static void CopyPropertiesFrom(this IMessage target, IMessage source, params string[] propertyKeys)
 	    {
