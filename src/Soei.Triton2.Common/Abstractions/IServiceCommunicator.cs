@@ -19,15 +19,18 @@ namespace Soei.Triton2.Common.Abstractions
 		Task SendToClientsAsync(params IMessage[] messages);
 		Task SendToServerAsync(params IMessage[] messages);
 		Task RegisterAsync(IMessage message);
+		Task SendToAliasAsync(params IMessage[] messages);
 
 		bool ListenForClientSessionMessages { get; }
 		bool ListenForRegistrations { get; }
 		bool ListenForServerJobs { get; }
+		bool ListenForAliasMessages { get; }
 
 		event PluginEventDelegate PluginEvent;
 		event OnMessageReceivedDelegate ClientSessionMessageReceived;
 		event OnMessageReceivedDelegate RegistrationReceived;
 		event OnMessageReceivedDelegate ServerJobReceived;
+		event OnMessageReceivedDelegate AliasMessageReceived;
 		Task<IMessage> WaitForReplyTo(IMessage message, CancellationToken? token = null, TimeSpan? timeout = null);
 	}
 }

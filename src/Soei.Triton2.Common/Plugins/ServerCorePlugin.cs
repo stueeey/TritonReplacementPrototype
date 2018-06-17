@@ -18,19 +18,22 @@ namespace Soei.Triton2.Common.Plugins
 		{
 			await base.OnInitialized();
 			Communicator.RegistrationReceived += OnRegistrationReceived;
-			Communicator.ServerJobReceived += AliasOwnershipRequestReceived;
+			Communicator.RegistrationReceived += AliasOwnershipRequestReceived;
+			Communicator.RegistrationReceived += AliasOwnershipClaimReceived;
 		}
 
 		public override void OnUninitialized()
 		{
 			base.OnUninitialized();
 			Communicator.RegistrationReceived -= OnRegistrationReceived;
-			Communicator.ServerJobReceived -= AliasOwnershipRequestReceived;
+			Communicator.RegistrationReceived -= AliasOwnershipRequestReceived;
+			Communicator.RegistrationReceived -= AliasOwnershipClaimReceived;
 		}
 
 		private void OnRegistrationReceived(IMessage m, ref MessageReceivedEventArgs e)
 	    {
-		    if (m.Label != TritonConstants.Registration) return;
+		    if (m.Label != TritonConstants.Registration) 
+				return;
 		    Console.WriteLine($"Received client message {m.Identifier} labelled {m.Label}");
 		    e.Status = MessageStatus.Complete;
 			if (_storage.SaveRegistration(Guid.Parse(m.ReplyToSession), m.Properties.ToDictionary(p => p.Key, p => p.Value.ToString())))
@@ -45,7 +48,22 @@ namespace Soei.Triton2.Common.Plugins
 		    if (_storage.CheckOwnership(m.GetProperty("Desired Alias"), Guid.Parse(m.GetProperty("Alias Token")), Guid.Parse(m.ReplyToSession)))
 		    {
 			    var reply = MessageFactory.CreateAcknowledgment(m);
-			    reply.CopyPropertiesFrom(m, "Desired Alias", "Alias Token");
+			    reply.CopyPropertiesFrom(m);
+			    Communicator.SendToClientsAsync(reply);
+		    }
+			else
+			    Communicator.SendToClientsAsync(MessageFactory.CreateNegativeAcknowledgment(m));
+	    }
+
+		private void AliasOwnershipClaimReceived(IMessage m, ref MessageReceivedEventArgs e)
+	    {
+		    if (m.Label != "Claim Alias Ownership") 
+			    return;
+		    e.Status = MessageStatus.Complete;
+		    if (_storage.TakeOwnership(m.GetProperty("Desired Alias"), Guid.Parse(m.GetProperty("Alias Token")), Guid.Parse(m.ReplyToSession)))
+		    {
+			    var reply = MessageFactory.CreateAcknowledgment(m);
+			    reply.CopyPropertiesFrom(m);
 			    Communicator.SendToClientsAsync(reply);
 		    }
 			else

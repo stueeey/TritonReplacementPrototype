@@ -41,6 +41,8 @@ namespace Soei.Triton2.ServiceBus.Communication
 		protected Lazy<IMessageSender> ServerQueueSender => Impl.ServerQueueSender;
 		protected Lazy<ISessionClient> ClientSessionListener => Impl.ClientSessionListener;
 		protected Lazy<IMessageSender> ClientSessionSender => Impl.ClientSessionSender;
+		protected Lazy<IMessageReceiver> AliasSessionListener => Impl.AliasSessionListener;
+		protected Lazy<IMessageSender> AliasSessionSender => Impl.AliasSessionSender;
 
 		protected ConcurrentDictionary<string, MessageWaitJob> ReplyWaitList { get; } = new ConcurrentDictionary<string, MessageWaitJob>();
 
@@ -125,7 +127,24 @@ namespace Soei.Triton2.ServiceBus.Communication
 			protected set => HandleListenForServerJobsChanged(value);
 		}
 
+		public bool ListenForAliasMessages => throw new NotImplementedException();
+
 		public event PluginEventDelegate PluginEvent;
+		public event OnMessageReceivedDelegate AliasMessageReceived
+		{
+			add
+			{
+				_clientSessionMessageReceivedDelegate = (OnMessageReceivedDelegate)Delegate.Combine(_clientSessionMessageReceivedDelegate, value);
+				ListenForClientSessionMessages = true;
+			}
+			remove
+			{
+				_clientSessionMessageReceivedDelegate = (OnMessageReceivedDelegate)Delegate.Remove(_clientSessionMessageReceivedDelegate, value);
+				if (!_clientSessionMessageReceivedDelegate?.GetInvocationList().Any() ?? false)
+					ListenForClientSessionMessages = false;
+			}
+		}
+
 		public event OnMessageReceivedDelegate ClientSessionMessageReceived
 		{
 			add
@@ -216,6 +235,11 @@ namespace Soei.Triton2.ServiceBus.Communication
 			ListenForClientSessionMessages = false;
 			ListenForRegistrations = false;
 			ListenForServerJobs = false;
+		}
+
+		public Task SendToAliasAsync(params IMessage[] messages)
+		{
+			throw new NotImplementedException();
 		}
 
 		#endregion

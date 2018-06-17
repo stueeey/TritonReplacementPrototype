@@ -33,22 +33,7 @@ namespace Soei.Triton2.ServiceBus.Communication
 				{
 					Logger.Debug("Listening for server jobs");
 					_serverJobsListenCancellationToken = new CancellationTokenSource();
-					_serverJobsListenTask = Task.Run(async () =>
-					{
-						while (!_serverJobsListenCancellationToken.IsCancellationRequested)
-						{
-							var message = await ServerQueueListener.Value.ReceiveAsync();
-							if (message != null)
-							{
-								await Task.Run(() => InvokeMessageHandlers(
-									ServerQueueListener.Value, 
-									_serverJobsMessageReceivedDelegate,
-									new ServiceBusMessage(message), 
-									_serverJobsListenCancellationToken.Token, 
-									OnServerJobReceived));
-							}
-						}
-					});
+					_serverJobsListenTask = StartListeningForServerJobs(_serverJobsListenCancellationToken.Token);
 				}
 				else if (_serverJobsListenTask != null)
 				{
@@ -57,6 +42,23 @@ namespace Soei.Triton2.ServiceBus.Communication
 					_serverJobsListenTask.Wait();
 					_serverJobsListenTask = null;
 					ServerQueueListener.Value.CloseAsync().Wait();
+				}
+			}
+		}
+
+		private async Task StartListeningForServerJobs(CancellationToken cancellationToken)
+		{
+			while (!cancellationToken.IsCancellationRequested)
+			{
+				var message = await ServerQueueListener.Value.ReceiveAsync();
+				if (message != null)
+				{
+					await Task.Run(() => InvokeMessageHandlers(
+						ServerQueueListener.Value,
+						_serverJobsMessageReceivedDelegate,
+						new ServiceBusMessage(message),
+						_serverJobsListenCancellationToken.Token,
+						OnServerJobReceived));
 				}
 			}
 		}

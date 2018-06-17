@@ -14,7 +14,9 @@ namespace Soei.Triton2.ServiceBus.Communication
 		    ServerQueueSender     = new Lazy<IMessageSender>(   () => new MessageSender(configuration.Connection, configuration.ServerRequestsQueue));
 		    ClientSessionListener = new Lazy<ISessionClient>(   () => new SessionClient(configuration.Connection, configuration.RegisteredClientsQueue, ReceiveMode.PeekLock));
 		    ClientSessionSender   = new Lazy<IMessageSender>(   () => new MessageSender(configuration.Connection, configuration.RegisteredClientsQueue));
-	    }
+			AliasSessionListener  = new Lazy<IMessageReceiver>(	() => new MessageReceiver(configuration.Connection, configuration.ServerRequestsQueue, ReceiveMode.PeekLock, RetryPolicy.Default));
+			AliasSessionSender	  = new Lazy<IMessageSender>(   () => new MessageSender(configuration.Connection, configuration.ServerRequestsQueue));
+		}
 
 	    #region Implementation of IServiceBusImplementations
 
@@ -24,7 +26,9 @@ namespace Soei.Triton2.ServiceBus.Communication
 	    public Lazy<IMessageSender> ServerQueueSender { get; }
 	    public Lazy<ISessionClient> ClientSessionListener { get; }
 	    public Lazy<IMessageSender> ClientSessionSender { get; }
+		public Lazy<IMessageReceiver> AliasSessionListener { get; }
+		public Lazy<IMessageSender> AliasSessionSender { get; }
 
-	    #endregion
-    }
+		#endregion
+	}
 }

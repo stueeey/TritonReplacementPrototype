@@ -32,22 +32,7 @@ namespace Soei.Triton2.ServiceBus.Communication
 				{
 					Logger.Debug("Listening for registration messages");
 					_registrationsListenCancellationToken = new CancellationTokenSource();
-					_registrationsListenTask = Task.Run(async () =>
-					{
-						while (!_registrationsListenCancellationToken.IsCancellationRequested)
-						{
-							var message = await RegistrationListener.Value.ReceiveAsync();
-							if (message != null)
-							{
-								await Task.Run(() => InvokeMessageHandlers(
-									RegistrationListener.Value, 
-									_registrationMessageReceivedDelegate, 
-									new ServiceBusMessage(message),
-									_registrationsListenCancellationToken.Token,
-									OnRegistrationReceived));
-							}
-						}
-					});
+					_registrationsListenTask = StartListeningForRegistrations(_registrationsListenCancellationToken.Token);
 				}
 				else if (_registrationsListenTask != null)
 				{
@@ -56,6 +41,23 @@ namespace Soei.Triton2.ServiceBus.Communication
 					_registrationsListenTask.Wait();
 					_registrationsListenTask = null;
 					RegistrationListener.Value.CloseAsync().Wait();
+				}
+			}
+		}
+
+		private async Task StartListeningForRegistrations(CancellationToken cancellationToken)
+		{
+			while (!cancellationToken.IsCancellationRequested)
+			{
+				var message = await RegistrationListener.Value.ReceiveAsync();
+				if (message != null)
+				{
+					await Task.Run(() => InvokeMessageHandlers(
+						RegistrationListener.Value,
+						_registrationMessageReceivedDelegate,
+						new ServiceBusMessage(message),
+						_registrationsListenCancellationToken.Token,
+						OnRegistrationReceived));
 				}
 			}
 		}
