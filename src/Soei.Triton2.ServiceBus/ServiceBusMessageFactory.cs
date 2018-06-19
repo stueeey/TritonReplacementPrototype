@@ -50,10 +50,11 @@ namespace Soei.Triton2.ServiceBus
 		    return response;
 	    }
 
-	    public IMessage CreateNegativeAcknowledgment(IMessage receivedMessage)
+	    public IMessage CreateNegativeAcknowledgment(IMessage receivedMessage, string reason)
 	    {
 		    var response = CreateReply(receivedMessage);
-		    response.Label = TritonConstants.PositiveAcknowledgement;
+		    response.Label = TritonConstants.NegativeAcknowledgement;
+			response["Reason"] = reason;
 		    return response;
 	    }
 

@@ -8,7 +8,11 @@ namespace Soei.Triton2.Common.Plugins
 {
     public class ServerCorePlugin : TritonPluginBase
     {
-	    private IRegistrationStorage _storage;
+		private const string DesiredAliasKey = "Desired Alias";
+		private const string AliasTokenKey = "Alias Token";
+		private const string RequestOwnershipLabel = "Request Alias Ownership";
+		private const string ClaimOwnershipLabel = "Claim Alias Ownership";
+		private readonly IRegistrationStorage _storage;
 	    public ServerCorePlugin(IRegistrationStorage storage)
 	    {
 			_storage = storage;
@@ -22,52 +26,55 @@ namespace Soei.Triton2.Common.Plugins
 			Communicator.RegistrationReceived += AliasOwnershipClaimReceived;
 		}
 
-		public override void OnUninitialized()
-		{
-			base.OnUninitialized();
-			Communicator.RegistrationReceived -= OnRegistrationReceived;
-			Communicator.RegistrationReceived -= AliasOwnershipRequestReceived;
-			Communicator.RegistrationReceived -= AliasOwnershipClaimReceived;
-		}
-
 		private void OnRegistrationReceived(IMessage m, ref MessageReceivedEventArgs e)
 	    {
-		    if (m.Label != TritonConstants.Registration) 
+		    if (m.Label != TritonConstants.RegistrationKey) 
 				return;
-		    Console.WriteLine($"Received client message {m.Identifier} labelled {m.Label}");
+		    Logger.Info($"Received client message {m.Identifier} labelled {m.Label}");
 		    e.Status = MessageStatus.Complete;
-			if (_storage.SaveRegistration(Guid.Parse(m.ReplyToSession), m.Properties.ToDictionary(p => p.Key, p => p.Value.ToString())))
-				Communicator.SendToClientsAsync(Communicator.MessageFactory.CreateAcknowledgment(m));
+			if (_storage.SaveRegistration(m.ReplyToSession, m.Properties.ToDictionary(p => p.Key, p => p.Value.ToString())))
+				Communicator.SendToClientAsync(Communicator.MessageFactory.CreateAcknowledgment(m));
 	    }
 
 	    private void AliasOwnershipRequestReceived(IMessage m, ref MessageReceivedEventArgs e)
 	    {
-		    if (m.Label != "Request Alias Ownership") 
+		    if (m.Label != RequestOwnershipLabel) 
 			    return;
 		    e.Status = MessageStatus.Complete;
-		    if (_storage.CheckOwnership(m.GetProperty("Desired Alias"), Guid.Parse(m.GetProperty("Alias Token")), Guid.Parse(m.ReplyToSession)))
+		    if (_storage.CheckOwnership(m.GetProperty(DesiredAliasKey), Guid.Parse(m.GetProperty(AliasTokenKey)), m.ReplyToSession))
 		    {
 			    var reply = MessageFactory.CreateAcknowledgment(m);
 			    reply.CopyPropertiesFrom(m);
-			    Communicator.SendToClientsAsync(reply);
+			    Communicator.SendToClientAsync(reply);
 		    }
 			else
-			    Communicator.SendToClientsAsync(MessageFactory.CreateNegativeAcknowledgment(m));
+			    Communicator.SendToClientAsync(MessageFactory.CreateNegativeAcknowledgment(m, $"Token did not match the one registered for {m.GetProperty(DesiredAliasKey)}"));
 	    }
 
 		private void AliasOwnershipClaimReceived(IMessage m, ref MessageReceivedEventArgs e)
 	    {
-		    if (m.Label != "Claim Alias Ownership") 
+		    if (m.Label != ClaimOwnershipLabel) 
 			    return;
-		    e.Status = MessageStatus.Complete;
-		    if (_storage.TakeOwnership(m.GetProperty("Desired Alias"), Guid.Parse(m.GetProperty("Alias Token")), Guid.Parse(m.ReplyToSession)))
+		    try
 		    {
-			    var reply = MessageFactory.CreateAcknowledgment(m);
+			    var oldOwner = _storage.TakeOwnership(m.GetProperty(DesiredAliasKey), Guid.Parse(m.GetProperty(AliasTokenKey)), m.ReplyToSession);
+			    if (oldOwner != null)
+			    {
+				    var lostOwnershipMessage = MessageFactory.CreateNewMessage("Lost Alias Ownership");
+				    lostOwnershipMessage.TargetSession = oldOwner.ToString();
+				    lostOwnershipMessage[DesiredAliasKey] = m.GetProperty(DesiredAliasKey);
+				    Communicator.SendToClientAsync(lostOwnershipMessage);
+			    }
+				var reply = MessageFactory.CreateAcknowledgment(m);
 			    reply.CopyPropertiesFrom(m);
-			    Communicator.SendToClientsAsync(reply);
+			    Communicator.SendToClientAsync(reply);
+			    e.Status = MessageStatus.Complete;
 		    }
-			else
-			    Communicator.SendToClientsAsync(MessageFactory.CreateNegativeAcknowledgment(m));
+		    catch (Exception ex)
+		    {
+			    Logger.Error($"Failed to grant ownership of {m.GetProperty(DesiredAliasKey)}", ex);
+			    Communicator.SendToClientAsync(MessageFactory.CreateNegativeAcknowledgment(m, "Encountered an error processing the request"));
+		    }
 	    }
     }
 }

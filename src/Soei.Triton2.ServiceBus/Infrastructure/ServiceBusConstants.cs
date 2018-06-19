@@ -3,10 +3,9 @@
     public static class ServiceBusConstants
     {
 		// Queues and topics
-	    public const string RegisteredClientsQueue = "clientsessions";
-	    public const string ServerRequestsQueue = "serverrequests";
-	    public const string AnnouncementTopic = "announcements";
-	    public const string RegistrationQueue = "registrations";
-	    public const string ClientAliasesQueue = "clientaliases";
+	    public const string DefaultRegisteredClientsQueue = "clientsessions";
+	    public const string DefaultServerRequestsQueue = "serverrequests";
+	    public const string DefaultRegistrationQueue = "registrations";
+	    public const string DefaultClientAliasesQueue = "clientaliases";
     }
 }

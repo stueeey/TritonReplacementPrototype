@@ -11,9 +11,8 @@ namespace Soei.Triton2.ServiceBus.Communication
 {
 	public partial class ServiceBusCommunicator
 	{
-		private IMessageSession _activeAliasSession;
 		private Task _aliasSessionListenTask;
-		private OnMessageReceivedDelegate _aliasSessionMessageReceivedDelegate;
+		private OnMessageReceivedDelegate _aliasMessageReceivedDelegate;
 		private CancellationTokenSource _aliasSessionListenCancellationToken;
 		private bool _listenForAliasSessionMessages;
 		private readonly object _listenForAliasSessionMessagesToken = new object();
@@ -27,17 +26,17 @@ namespace Soei.Triton2.ServiceBus.Communication
 				_listenForAliasSessionMessages = enabled;
 				if (enabled)
 				{
-					_clientSessionListenCancellationToken = new CancellationTokenSource();
+					_aliasSessionListenCancellationToken = new CancellationTokenSource();
 					Logger.Debug("Listening for alias messages");
-					_clientSessionListenTask = StartListeningForAliasMessages(_clientSessionListenCancellationToken.Token);
+					_aliasSessionListenTask = StartListeningForAliasMessages(_clientSessionListenCancellationToken.Token);
 				}
-				else if (_activeClientSession != null)
+				else if (AliasQueueListener.IsValueCreated)
 				{
 					Logger.Debug("Stopped listening for alias messages");
-					_clientSessionListenCancellationToken.Cancel();
+					_aliasSessionListenCancellationToken.Cancel();
 					_clientSessionListenTask.Wait();
 					_clientSessionListenTask = null;
-					_activeClientSession.CloseAsync().Wait();
+					AliasQueueListener.Value.CloseAsync().Wait();
 				}
 			}
 		}
@@ -52,25 +51,31 @@ namespace Soei.Triton2.ServiceBus.Communication
 		{
 			while (!cancellationToken.IsCancellationRequested)
 			{
-				var message = await ServerQueueListener.Value.ReceiveAsync();
+				var message = await AliasQueueListener.Value.ReceiveAsync();
 				if (message != null)
 				{
 					await Task.Run(() => InvokeMessageHandlers(
-						ServerQueueListener.Value,
-						_serverJobsMessageReceivedDelegate,
+						AliasQueueListener.Value,
+						_aliasMessageReceivedDelegate,
 						new ServiceBusMessage(message),
-						_serverJobsListenCancellationToken.Token,
-						OnServerJobReceived));
+						_aliasSessionListenCancellationToken.Token,
+						OnAliasMessageReceived), cancellationToken);
 				}
 			}
 		}
 
-		public async Task SendToAliasesAsync(params IMessage[] messages)
+		public async Task SendToAliasAsync(string alias, IMessage message) => await SendToAliasAsync(alias, new[] { message });
+
+		public async Task SendToAliasAsync(string alias, params IMessage[] messages)
 		{
 			if (!messages.Any())
 				throw new InvalidOperationException("Tried to send an empty array of messages");
 			if (messages.All(m => m is ServiceBusMessage))
-				await AliasSessionSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage)m).InnerMessage).ToArray());
+			{
+				foreach (var message in messages)
+					message.Properties[TritonConstants.TargetAliasKey] = alias;
+				await AliasQueueSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
+			}
 			else
 				throw new InvalidOperationException($"{GetType().Name} cannot send messages which do not inherit from {nameof(ServiceBusMessage)}");
 		}

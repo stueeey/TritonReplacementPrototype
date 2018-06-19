@@ -58,10 +58,12 @@ namespace Soei.Triton2.ServiceBus.Communication
 						_serverJobsMessageReceivedDelegate,
 						new ServiceBusMessage(message),
 						_serverJobsListenCancellationToken.Token,
-						OnServerJobReceived));
+						OnServerJobReceived), cancellationToken);
 				}
 			}
 		}
+
+		public async Task SendToServerAsync(IMessage message) => await SendToServerAsync(new[] { message });
 
 		public async Task SendToServerAsync(params IMessage[] messages)
 		{

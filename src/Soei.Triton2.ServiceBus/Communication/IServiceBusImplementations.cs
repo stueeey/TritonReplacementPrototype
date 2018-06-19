@@ -12,7 +12,7 @@ namespace Soei.Triton2.ServiceBus.Communication
 	    Lazy<IMessageSender> ServerQueueSender { get; }
 	    Lazy<ISessionClient> ClientSessionListener { get; }
 	    Lazy<IMessageSender> ClientSessionSender { get; }
-		Lazy<IMessageReceiver> AliasSessionListener { get; }
-		Lazy<IMessageSender> AliasSessionSender { get; }
+		Lazy<IMessageReceiver> AliasQueueListener { get; }
+		Lazy<IMessageSender> AliasQueueSender { get; }
 	}
 }

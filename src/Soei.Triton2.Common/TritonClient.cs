@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Soei.Triton2.Common.Abstractions;
 using Soei.Triton2.Common.Infrastructure;
@@ -34,6 +36,11 @@ namespace Soei.Triton2.Common
 	    public Task<Guid> RequestOwnershipOfAliasAsync(string alias, Guid token)
 	    {
 		    return GetPlugin<ClientCorePlugin>().RequestOwnershipOfAliasAsync(alias, token);
+	    }
+
+	    public Task<string> RegisterAsync(IDictionary<string, string> metadata = null, TimeSpan? timeout = null)
+	    {
+		    return GetPlugin<ClientCorePlugin>().RegisterAsync(metadata, timeout);
 	    }
 
 	    #endregion

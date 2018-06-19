@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Linq;
 using System.Text;
 using Soei.Triton2.Common.Abstractions;
 
@@ -24,7 +25,7 @@ namespace Soei.Triton2.Common
 	    {
 		    if (target == null) throw new ArgumentNullException(nameof(target));
 		    if (source == null) throw new ArgumentNullException(nameof(source));
-		    if (propertyKeys == null)
+		    if (propertyKeys == null || !propertyKeys.Any())
 		    {
 			    foreach (var property in source.Properties.Keys)
 				    target.Properties[property] = source.Properties[property];

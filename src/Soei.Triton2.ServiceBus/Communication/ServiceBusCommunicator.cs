@@ -32,8 +32,6 @@ namespace Soei.Triton2.ServiceBus.Communication
 		private static readonly ILog ClassLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{TritonConstants.LoggerInternalsPrefix}.{MethodBase.GetCurrentMethod().DeclaringType.Name}");
 		protected ILog Logger { get; private set; }
 
-		public ConcurrentDictionary<string, object> State { get; } = new ConcurrentDictionary<string, object>();
-
 		private IServiceBusImplementations Impl { get; }
 		protected Lazy<IMessageReceiver> RegistrationListener => Impl.RegistrationListener;
 		protected Lazy<IMessageSender> RegistrationSender => Impl.RegistrationSender;
@@ -41,22 +39,19 @@ namespace Soei.Triton2.ServiceBus.Communication
 		protected Lazy<IMessageSender> ServerQueueSender => Impl.ServerQueueSender;
 		protected Lazy<ISessionClient> ClientSessionListener => Impl.ClientSessionListener;
 		protected Lazy<IMessageSender> ClientSessionSender => Impl.ClientSessionSender;
-		protected Lazy<IMessageReceiver> AliasSessionListener => Impl.AliasSessionListener;
-		protected Lazy<IMessageSender> AliasSessionSender => Impl.AliasSessionSender;
+		protected Lazy<IMessageReceiver> AliasQueueListener => Impl.AliasQueueListener;
+		protected Lazy<IMessageSender> AliasQueueSender => Impl.AliasQueueSender;
+
+		private static bool RemoveListenersForPlugin(TritonPluginBase plugin, ref OnMessageReceivedDelegate eventHandlers)
+		{
+			var handlers = eventHandlers.GetInvocationList().Where(h => h.Target == plugin);
+			// ReSharper disable once LoopCanBeConvertedToQuery
+			foreach (var handler in handlers)
+				eventHandlers = (OnMessageReceivedDelegate) Delegate.Remove(eventHandlers, handler);
+			return !eventHandlers?.GetInvocationList().Any() ?? true;
+		}
 
 		protected ConcurrentDictionary<string, MessageWaitJob> ReplyWaitList { get; } = new ConcurrentDictionary<string, MessageWaitJob>();
-
-		public T GetState<T>(string key)
-		{
-			return State.TryGetValue(key, out var value)
-				? (T)value
-				: default(T);
-		}
-
-		public void SignalPluginEvent(string eventName, object state)
-		{
-			PluginEvent?.Invoke(eventName, state);
-		}
 
 		private async Task InvokeMessageHandlers(IReceiverClient receiver, Delegate handlers, ServiceBusMessage message, CancellationToken token, OnMessageReceivedDelegate baseHandler)
 		{
@@ -80,22 +75,7 @@ namespace Soei.Triton2.ServiceBus.Communication
 			if (e.Status.HasFlag(MessageStatus.MarkedForDeletion))
 				await receiver.CompleteAsync(message.InnerMessage.SystemProperties.LockToken);
 			else
-				await receiver.AbandonAsync(message.InnerMessage.SystemProperties.LockToken);
-		}
-
-		public IMessageFactory MessageFactory { get; }
-
-		public void SetLogger(ILog log = null) => Logger = log ?? ClassLogger;
-
-		public ServiceBusCommunicator(ServiceBusConfiguration configuration, IServiceBusImplementations serviceBusImplementations = null)
-		{
-			SetLogger();
-
-			if (configuration == null)
-				throw new ArgumentNullException(nameof(configuration));
-			State["Identifier"] = configuration.ClientIdentifier;
-			MessageFactory = new ServiceBusMessageFactory(ServiceBusConstants.RegisteredClientsQueue, configuration.ClientIdentifier);
-			Impl = serviceBusImplementations ?? new DefaultServiceBusImplementations(configuration);
+				await receiver.DeadLetterAsync(message.InnerMessage.SystemProperties.LockToken);
 		}
 
 		private void CheckIfAnyoneIsWaitingForMessage(IMessage m, MessageReceivedEventArgs e)
@@ -108,6 +88,47 @@ namespace Soei.Triton2.ServiceBus.Communication
 		}
 
 		#region Public
+
+		public ConcurrentDictionary<string, object> State { get; } = new ConcurrentDictionary<string, object>();
+
+		public IMessageFactory MessageFactory { get; }
+
+		public void SetLogger(ILog log = null) => Logger = log ?? ClassLogger;
+
+		public ServiceBusCommunicator(ServiceBusConfiguration configuration, IServiceBusImplementations serviceBusImplementations = null)
+		{
+			SetLogger();
+
+			if (configuration == null)
+				throw new ArgumentNullException(nameof(configuration));
+			State[TritonConstants.RegisteredAsKey] = configuration.ClientIdentifier;
+			MessageFactory = new ServiceBusMessageFactory(ServiceBusConstants.DefaultRegisteredClientsQueue, configuration.ClientIdentifier);
+			Impl = serviceBusImplementations ?? new DefaultServiceBusImplementations(configuration);
+		}
+
+		public T GetState<T>(string key)
+		{
+			return State.TryGetValue(key, out var value)
+				? (T)value
+				: default(T);
+		}
+
+		public void SignalPluginEvent(string eventName, object state)
+		{
+			PluginEvent?.Invoke(eventName, state);
+		}
+
+		public void RemoveListenersForPlugin(TritonPluginBase plugin)
+		{
+			if (RemoveListenersForPlugin(plugin, ref _registrationMessageReceivedDelegate))
+				ListenForRegistrations = false;
+			if (RemoveListenersForPlugin(plugin, ref _aliasMessageReceivedDelegate))
+				ListenForAliasMessages = false;
+			if (RemoveListenersForPlugin(plugin, ref _clientSessionMessageReceivedDelegate))
+				ListenForClientSessionMessages = false;
+			if (RemoveListenersForPlugin(plugin, ref _serverJobsMessageReceivedDelegate))
+				ListenForServerJobs = false;
+		}
 
 		public bool ListenForClientSessionMessages
 		{
@@ -127,21 +148,25 @@ namespace Soei.Triton2.ServiceBus.Communication
 			protected set => HandleListenForServerJobsChanged(value);
 		}
 
-		public bool ListenForAliasMessages => throw new NotImplementedException();
+		public bool ListenForAliasMessages
+		{
+			get => _listenForAliasSessionMessages;
+			protected set => HandleListenForAliasMessagesChanged(value);
+		}
 
 		public event PluginEventDelegate PluginEvent;
 		public event OnMessageReceivedDelegate AliasMessageReceived
 		{
 			add
 			{
-				_clientSessionMessageReceivedDelegate = (OnMessageReceivedDelegate)Delegate.Combine(_clientSessionMessageReceivedDelegate, value);
-				ListenForClientSessionMessages = true;
+				_aliasMessageReceivedDelegate = (OnMessageReceivedDelegate)Delegate.Combine(_aliasMessageReceivedDelegate, value);
+				ListenForAliasMessages = true;
 			}
 			remove
 			{
-				_clientSessionMessageReceivedDelegate = (OnMessageReceivedDelegate)Delegate.Remove(_clientSessionMessageReceivedDelegate, value);
-				if (!_clientSessionMessageReceivedDelegate?.GetInvocationList().Any() ?? false)
-					ListenForClientSessionMessages = false;
+				_aliasMessageReceivedDelegate = (OnMessageReceivedDelegate)Delegate.Remove(_aliasMessageReceivedDelegate, value);
+				if (!_aliasMessageReceivedDelegate?.GetInvocationList().Any() ?? false)
+					ListenForAliasMessages = false;
 			}
 		}
 
@@ -195,6 +220,8 @@ namespace Soei.Triton2.ServiceBus.Communication
 			return Task.Run(() =>
 			{
 				var calculatedTimeout = (timeout ?? message.TimeToLive);
+				if (calculatedTimeout > TritonConstants.MaximumReplyWaitTime)
+					calculatedTimeout = TritonConstants.MaximumReplyWaitTime;
 				calculatedTimeout = calculatedTimeout == TimeSpan.Zero
 					? TimeSpan.FromSeconds(10)
 					: calculatedTimeout;

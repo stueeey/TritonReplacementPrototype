@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Soei.Triton2.Common;
 using Soei.Triton2.Common.Abstractions;
@@ -14,7 +16,7 @@ namespace Soei.Triton2.ServiceBus.Communication
 		private bool _listenForRegistrations;
 		private readonly object _listenForRegistrationsToken = new object();
 
-		void OnRegistrationReceived(IMessage m, ref MessageReceivedEventArgs e)
+		private void OnRegistrationReceived(IMessage m, ref MessageReceivedEventArgs e)
 		{
 			Logger.Debug($"Received a new registration message with a callback session of {m.ReplyToSession}");
 			CheckIfAnyoneIsWaitingForMessage(m, e);
@@ -57,15 +59,21 @@ namespace Soei.Triton2.ServiceBus.Communication
 						_registrationMessageReceivedDelegate,
 						new ServiceBusMessage(message),
 						_registrationsListenCancellationToken.Token,
-						OnRegistrationReceived));
+						OnRegistrationReceived), cancellationToken);
 				}
 			}
 		}
 
-		public async Task RegisterAsync(IMessage message)
+		public async Task SendRegistrationMessageAsync(IMessage message) => await SendRegistrationMessageAsync(new [] { message });
+
+		public async Task SendRegistrationMessageAsync(params IMessage[] messages)
 		{
-			if (message is ServiceBusMessage busMessage)
-				await RegistrationSender.Value.SendAsync(busMessage.InnerMessage);
+			if (!messages.Any())
+				throw new InvalidOperationException("Tried to send an empty array of registration messages");
+			if (messages.All(m => m is ServiceBusMessage))
+				await RegistrationSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage)m).InnerMessage).ToArray());
+			else
+				throw new InvalidOperationException($"{GetType().Name} cannot send messages which do not inherit from {nameof(ServiceBusMessage)}");
 		}
 	}
 }

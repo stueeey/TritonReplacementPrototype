@@ -5,6 +5,6 @@
 	    IMessage CreateNewMessage(string label = null);
 	    IMessage CreateReply(IMessage receivedMessage);
 	    IMessage CreateAcknowledgment(IMessage receivedMessage);
-	    IMessage CreateNegativeAcknowledgment(IMessage receivedMessage);
+	    IMessage CreateNegativeAcknowledgment(IMessage receivedMessage, string reason);
     }
 }

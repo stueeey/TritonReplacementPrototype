@@ -8,30 +8,23 @@ namespace Soei.Triton2.ConsoleServer
 {
 	public class EchoListenerPlugin : TritonPluginBase
 	{
+		private const string EchoKey = "Echo";
+
 		protected override async Task OnInitialized()
 		{
 			await base.OnInitialized();
 			Communicator.ServerJobReceived += OnServerJobReceived;
 		}
 
-		#region Overrides of TritonPluginBase
-
-		public override void OnUninitialized()
-		{
-			base.OnUninitialized();
-			Communicator.ServerJobReceived -= OnServerJobReceived;
-		}
-
-		#endregion
-
 		private void OnServerJobReceived(IMessage m, ref MessageReceivedEventArgs e)
 		{
-			if (m.Label != "Echo") return;
+			if (m.Label != EchoKey) 
+				return;
 			var reply = MessageFactory.CreateReply(m);
 			reply.Label = m.Label;
-			reply.Properties["Echo"] = m.Properties["Echo"];
-			Console.WriteLine($"Echoing {reply.Properties["Echo"]}");
-			Communicator.SendToClientsAsync(reply);
+			reply.Properties[EchoKey] = m.Properties[EchoKey];
+			Console.WriteLine($"Echoing {reply.Properties[EchoKey]}");
+			Communicator.SendToClientAsync(reply);
 			e.Status = MessageStatus.Complete;
 		}
 	}

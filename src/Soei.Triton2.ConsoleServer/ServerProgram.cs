@@ -22,6 +22,7 @@ namespace Soei.Triton2.ConsoleServer
 	        var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
 	        XmlConfigurator.Configure(logRepository, new FileInfo("Logging.config"));
 	        var container = SetupIoc();
+	        container.Bind<IRegistrationStorage>().To<InMemoryRegistrationStorage>().InSingletonScope();
 	        var server = container.Get<ITritonServer>();
 	        Console.Title = $"Server Console [{server.Identifier}]";
 	        Console.ReadKey();
@@ -32,7 +33,7 @@ namespace Soei.Triton2.ConsoleServer
 		    var configuration = new ServiceBusConfiguration
 		    (
 			    new ServiceBusConnection(Environment.GetEnvironmentVariable(TritonConstants.ConnectionKey) ?? throw new ArgumentException($"Environment variable '{TritonConstants.ConnectionKey}' is not configured")),
-			    $"Server{Process.GetCurrentProcess().Id}|{TritonHelpers.GetMachineIdentifier()}"
+			    Guid.NewGuid().ToString()
 		    );
 		    var implementations = new TritonServiceBusImplementations(configuration)
 		    {

@@ -20,7 +20,7 @@ namespace Soei.Triton2.Common.Infrastructure
 
 	public abstract class TritonPluginBase
 	{
-		protected static ILog ClassLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{TritonConstants.LoggerPluginsPrefix}.{MethodBase.GetCurrentMethod().DeclaringType.Name}");
+		protected static ILog ClassLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{TritonConstants.LoggerPluginsPrefix}.{MethodBase.GetCurrentMethod()?.DeclaringType?.Name ?? "<Unknown>"}");
 		protected ILog Logger { get; private set;}
 		protected IServiceCommunicator Communicator { get; private set; }
 		protected IMessageFactory MessageFactory => Communicator?.MessageFactory;
@@ -33,6 +33,11 @@ namespace Soei.Triton2.Common.Infrastructure
 		protected TritonPluginBase()
 		{
 			SetLogger();
+		}
+
+		protected void SubscribeButDoNothing(IMessage message, ref MessageReceivedEventArgs e)
+		{
+
 		}
 
 		internal void SetCommunicator(IServiceCommunicator communicator)
@@ -51,7 +56,7 @@ namespace Soei.Triton2.Common.Infrastructure
 
 		public virtual void OnUninitialized()
 		{
-
+			Communicator?.RemoveListenersForPlugin(this);
 		}
 	}
 }

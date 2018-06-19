@@ -16,10 +16,16 @@ namespace Soei.Triton2.Common.Abstractions
 		void SignalPluginEvent(string eventName, object state = null);
 
 		IMessageFactory MessageFactory { get; }
-		Task SendToClientsAsync(params IMessage[] messages);
+		void RemoveListenersForPlugin(TritonPluginBase plugin);
+
+		Task SendToClientAsync(IMessage message);
+		Task SendToClientAsync(params IMessage[] messages);
+		Task SendToServerAsync(IMessage message);
 		Task SendToServerAsync(params IMessage[] messages);
-		Task RegisterAsync(IMessage message);
-		Task SendToAliasAsync(params IMessage[] messages);
+		Task SendRegistrationMessageAsync(IMessage message);
+		Task SendRegistrationMessageAsync(params IMessage[] messages);
+		Task SendToAliasAsync(string alias, IMessage message);
+		Task SendToAliasAsync(string alias, params IMessage[] messages);
 
 		bool ListenForClientSessionMessages { get; }
 		bool ListenForRegistrations { get; }

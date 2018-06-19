@@ -97,6 +97,12 @@ namespace Soei.Triton2.ServiceBus
 
 	    public IDictionary<string, object> Properties => InnerMessage.UserProperties;
 
+	    public object this[string propertyKey]
+	    {
+		    get => Properties.ContainsKey(propertyKey) ? Properties[propertyKey] : null;
+		    set => Properties[propertyKey] = value;
+	    }
+
 	    #endregion
     }
 }

@@ -29,7 +29,7 @@ namespace Soei.Triton2.ServiceBus.Communication
 				{
 					_clientSessionListenCancellationToken = new CancellationTokenSource();
 					Logger.Debug("Listening for client messages");
-					_clientSessionListenTask = ListenForClientMessages();
+					_clientSessionListenTask = StartListeningForClientMessages();
 				}
 				else if (_activeClientSession != null)
 				{
@@ -48,9 +48,9 @@ namespace Soei.Triton2.ServiceBus.Communication
 			CheckIfAnyoneIsWaitingForMessage(m, e);
 		}
 
-		private async Task ListenForClientMessages()
+		private async Task StartListeningForClientMessages()
 		{
-			_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State["Identifier"].ToString());
+			_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[TritonConstants.RegisteredAsKey].ToString());
 			while (_activeClientSession != null && _clientSessionListenCancellationToken != null &&
 			       !_clientSessionListenCancellationToken.Token.IsCancellationRequested)
 			{
@@ -60,10 +60,10 @@ namespace Soei.Triton2.ServiceBus.Communication
 					if (message != null)
 					{
 						await Task.Run(() => InvokeMessageHandlers(
-							_activeClientSession, 
+							_activeClientSession,
 							_clientSessionMessageReceivedDelegate,
-							new ServiceBusMessage(message), 
-							_clientSessionListenCancellationToken.Token, 
+							new ServiceBusMessage(message),
+							_clientSessionListenCancellationToken.Token,
 							OnClientSessionMessageReceived));
 					}
 				}
@@ -81,7 +81,9 @@ namespace Soei.Triton2.ServiceBus.Communication
 			}
 		}
 
-		public async Task SendToClientsAsync(params IMessage[] messages)
+		public async Task SendToClientAsync(IMessage message) => await SendToClientAsync(new[] { message });
+
+		public async Task SendToClientAsync(params IMessage[] messages)
 		{
 			if (!messages.Any())
 				throw new InvalidOperationException("Tried to send an empty array of messages to a client");

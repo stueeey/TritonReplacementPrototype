@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -29,7 +30,6 @@ namespace Soei.Triton2.ConsoleClient
 	        XmlConfigurator.Configure(logRepository, new FileInfo("Logging.config"));
 	        var container = SetupIoc();
 	        var client = container.Get<ITritonClient>();
-	        //client.LoadPlugins(new EchoPlugin());
 	        Console.Title = $"Client Console [{client.Identifier}]";
 	        RunClient(client).Wait();
         }
@@ -37,7 +37,11 @@ namespace Soei.Triton2.ConsoleClient
 	    private static async Task RunClient(ITritonClient client)
 	    {
 		    var echoPlugin = client.GetPlugin<EchoPlugin>();
-		    await client.RequestOwnershipOfAliasAsync("UK123", Guid.Empty);
+		    await client.RegisterAsync(new Dictionary<string, string>
+		    {
+			    { "Mood", "Aggressive"}
+		    });
+		    await client.RequestOwnershipOfAliasAsync("UK123", Guid.NewGuid());
 		    Console.WriteLine("Enter echo text:");
 		    while (true)
 		    {
@@ -56,7 +60,7 @@ namespace Soei.Triton2.ConsoleClient
 		    var configuration = new ServiceBusConfiguration
 		    (
 			    new ServiceBusConnection(credentials),
-			    $"Client{Process.GetCurrentProcess().Id}|{TritonHelpers.GetMachineIdentifier()}"
+			    Guid.NewGuid().ToString()
 		    );
 		    var implementations = new TritonServiceBusImplementations(configuration)
 		    {

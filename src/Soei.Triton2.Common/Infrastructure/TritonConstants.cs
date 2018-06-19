@@ -1,4 +1,6 @@
-﻿namespace Soei.Triton2.Common.Infrastructure
+﻿using System;
+
+namespace Soei.Triton2.Common.Infrastructure
 {
     public static class TritonConstants
     {
@@ -12,6 +14,10 @@
 		// Standard message labels
 	    public const string PositiveAcknowledgement = "ACK";
 	    public const string NegativeAcknowledgement = "NACK";
-	    public const string Registration = "Registration";
+	    public const string RegistrationKey = "Registration";
+	    public const string RegisteredAsKey = "Registered As";
+	    public const string TargetAliasKey = "Target Alias";
+
+	    public static readonly TimeSpan MaximumReplyWaitTime = TimeSpan.FromHours(1);
     }
 }

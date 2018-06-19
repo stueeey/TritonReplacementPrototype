@@ -8,14 +8,14 @@ namespace Soei.Triton2.ServiceBus.Communication
     {
 	    public DefaultServiceBusImplementations(ServiceBusConfiguration configuration)
 	    {
-		    RegistrationSender    = new Lazy<IMessageSender>(   () => new MessageSender(configuration.Connection, configuration.AnnouncementTopic, RetryPolicy.Default));
-		    RegistrationListener  = new Lazy<IMessageReceiver>( () => new MessageReceiver(configuration.Connection, EntityNameHelper.FormatSubscriptionPath(configuration.AnnouncementTopic, configuration.RegistrationQueue), ReceiveMode.PeekLock, RetryPolicy.Default));
-		    ServerQueueListener   = new Lazy<IMessageReceiver>( () => new MessageReceiver(configuration.Connection, configuration.ServerRequestsQueue));
-		    ServerQueueSender     = new Lazy<IMessageSender>(   () => new MessageSender(configuration.Connection, configuration.ServerRequestsQueue));
-		    ClientSessionListener = new Lazy<ISessionClient>(   () => new SessionClient(configuration.Connection, configuration.RegisteredClientsQueue, ReceiveMode.PeekLock));
-		    ClientSessionSender   = new Lazy<IMessageSender>(   () => new MessageSender(configuration.Connection, configuration.RegisteredClientsQueue));
-			AliasSessionListener  = new Lazy<IMessageReceiver>(	() => new MessageReceiver(configuration.Connection, configuration.ServerRequestsQueue, ReceiveMode.PeekLock, RetryPolicy.Default));
-			AliasSessionSender	  = new Lazy<IMessageSender>(   () => new MessageSender(configuration.Connection, configuration.ServerRequestsQueue));
+		    RegistrationListener  = new Lazy<IMessageReceiver>(() => new MessageReceiver( configuration.Connection, configuration.RegistrationQueue,      ReceiveMode.PeekLock, RetryPolicy.Default));
+		    RegistrationSender    = new Lazy<IMessageSender>  (() => new MessageSender(   configuration.Connection, configuration.RegistrationQueue,      RetryPolicy.Default));
+		    ServerQueueListener   = new Lazy<IMessageReceiver>(() => new MessageReceiver( configuration.Connection, configuration.ServerRequestsQueue,    ReceiveMode.PeekLock, RetryPolicy.Default));
+		    ServerQueueSender     = new Lazy<IMessageSender>  (() => new MessageSender(   configuration.Connection, configuration.ServerRequestsQueue,    RetryPolicy.Default));
+		    ClientSessionListener = new Lazy<ISessionClient>  (() => new SessionClient(   configuration.Connection, configuration.RegisteredClientsQueue, ReceiveMode.PeekLock, RetryPolicy.Default));
+		    ClientSessionSender   = new Lazy<IMessageSender>  (() => new MessageSender(   configuration.Connection, configuration.RegisteredClientsQueue, RetryPolicy.Default));
+			AliasQueueListener    = new Lazy<IMessageReceiver>(() => new MessageReceiver( configuration.Connection, configuration.ClientAliasesQueue,     ReceiveMode.PeekLock, RetryPolicy.Default));
+			AliasQueueSender	  = new Lazy<IMessageSender>  (() => new MessageSender(   configuration.Connection, configuration.ClientAliasesQueue,     RetryPolicy.Default));
 		}
 
 	    #region Implementation of IServiceBusImplementations
@@ -26,8 +26,8 @@ namespace Soei.Triton2.ServiceBus.Communication
 	    public Lazy<IMessageSender> ServerQueueSender { get; }
 	    public Lazy<ISessionClient> ClientSessionListener { get; }
 	    public Lazy<IMessageSender> ClientSessionSender { get; }
-		public Lazy<IMessageReceiver> AliasSessionListener { get; }
-		public Lazy<IMessageSender> AliasSessionSender { get; }
+		public Lazy<IMessageReceiver> AliasQueueListener { get; }
+		public Lazy<IMessageSender> AliasQueueSender { get; }
 
 		#endregion
 	}

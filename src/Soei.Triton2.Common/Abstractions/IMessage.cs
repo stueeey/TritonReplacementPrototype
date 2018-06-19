@@ -18,5 +18,6 @@ namespace Soei.Triton2.Common.Abstractions
 	    DateTime SentTimeUtc { get; }
 	    string ResponseTo { get; set; }
 	    IDictionary<string, object> Properties { get; }
+	    object this[string propertyKey] { get; set;}
     }
 }

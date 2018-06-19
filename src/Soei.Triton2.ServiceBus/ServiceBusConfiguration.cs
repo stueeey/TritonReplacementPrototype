@@ -20,11 +20,10 @@ namespace Soei.Triton2.ServiceBus
 	    }
 
 	    public ServiceBusConnection Connection { get; }
-	    public string RegisteredClientsQueue  { get; set; } = ServiceBusConstants.RegisteredClientsQueue;
-	    public string ServerRequestsQueue     { get; set; } = ServiceBusConstants.ServerRequestsQueue;
-	    public string AnnouncementTopic       { get; set; } = ServiceBusConstants.AnnouncementTopic;
-	    public string RegistrationQueue       { get; set; } = ServiceBusConstants.RegistrationQueue;
-	    public string ClientAliasesQueue      { get; set; } = ServiceBusConstants.ClientAliasesQueue;
+	    public string RegisteredClientsQueue  { get; set; } = ServiceBusConstants.DefaultRegisteredClientsQueue;
+	    public string ServerRequestsQueue     { get; set; } = ServiceBusConstants.DefaultServerRequestsQueue;
+	    public string RegistrationQueue       { get; set; } = ServiceBusConstants.DefaultRegistrationQueue;
+	    public string ClientAliasesQueue      { get; set; } = ServiceBusConstants.DefaultClientAliasesQueue;
 
 	    public string ClientIdentifier { get; set; }
     }
