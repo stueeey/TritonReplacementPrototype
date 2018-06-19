@@ -11,6 +11,7 @@ using Ninject;
 using Soei.Triton2.Common;
 using Soei.Triton2.Common.Abstractions;
 using Soei.Triton2.Common.Infrastructure;
+using Soei.Triton2.Common.Plugins;
 using Soei.Triton2.ServiceBus;
 using Soei.Triton2.ServiceBus.Ninject;
 
@@ -42,15 +43,34 @@ namespace Soei.Triton2.ConsoleClient
 			    { "Mood", "Aggressive"}
 		    });
 		    await client.RequestOwnershipOfAliasAsync("UK123", Guid.NewGuid());
-		    Console.WriteLine("Enter echo text:");
+		    
 		    while (true)
 		    {
-			    var command = Console.ReadLine();
+				Console.WriteLine("Enter command:");
+				var command = Console.ReadLine();
 			    if (CommandEquals(command, "exit")) 
 				    return;
-			    if (CommandEquals(command, "ping")) 
-				    return;
-			    await echoPlugin.Echo(command);
+				if (CommandEquals(command, "ping self"))
+				{
+					var result = await client.GetPlugin<ClientCorePlugin>().PingClient(client.Identifier);
+					Console.WriteLine(result?.ToString() ?? "Ping timed out");
+					continue;
+				}
+				if (CommandEquals(command, "ping server"))
+				{
+					var result = await client.GetPlugin<ClientCorePlugin>().PingServer();
+					Console.WriteLine(result?.ToString() ?? "Ping timed out");
+					continue;
+				}
+				if (command.StartsWith("ping alias"))
+				{
+					Console.WriteLine("Enter alias");
+					command = Console.ReadLine();
+					var result = await client.GetPlugin<ClientCorePlugin>().PingAlias(command);
+					Console.WriteLine(result?.ToString() ?? "Ping timed out");
+					continue;
+				}
+				await echoPlugin.Echo(command);
 		    }
 	    }
 

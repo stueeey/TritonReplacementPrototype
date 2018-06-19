@@ -45,7 +45,7 @@ namespace Soei.Triton2.Common.Infrastructure
 		    }
 	    }
 
-	    public string Identifier => Communicator.GetState<string>(nameof(Identifier));
+	    public string Identifier => Communicator.GetState<string>(TritonConstants.RegisteredAsKey);
 
 	    #region IDisposable
 
