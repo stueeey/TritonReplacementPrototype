@@ -15,9 +15,9 @@ namespace Soei.Triton2.Common.Abstractions
 	    byte[] Body { get; set; }
 	    long BodySize { get; }
 	    TimeSpan TimeToLive { get; set; }
-	    DateTime SentTimeUtc { get; }
+	    DateTime EnqueuedTimeUtc { get; }
 	    string ResponseTo { get; set; }
 	    IDictionary<string, object> Properties { get; }
-	    object this[string propertyKey] { get; set;}
+	    object this[string propertyKey] { get; set; }
     }
 }

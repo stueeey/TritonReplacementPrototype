@@ -87,7 +87,7 @@ namespace Soei.Triton2.ServiceBus
 		    set => InnerMessage.TimeToLive = value;
 	    }
 
-	    public DateTime SentTimeUtc => InnerMessage.SystemProperties.EnqueuedTimeUtc;
+	    public DateTime EnqueuedTimeUtc => InnerMessage.SystemProperties.EnqueuedTimeUtc;
 
 	    public string ResponseTo
 	    {
