@@ -48,6 +48,8 @@ namespace Soei.Triton2.ConsoleClient
 			    var command = Console.ReadLine();
 			    if (CommandEquals(command, "exit")) 
 				    return;
+			    if (CommandEquals(command, "ping")) 
+				    return;
 			    await echoPlugin.Echo(command);
 		    }
 	    }

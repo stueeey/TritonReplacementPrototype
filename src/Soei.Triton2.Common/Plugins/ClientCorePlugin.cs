@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Soei.Triton2.Common.Abstractions;
 using Soei.Triton2.Common.Infrastructure;
@@ -8,23 +9,6 @@ namespace Soei.Triton2.Common.Plugins
 {
     public class ClientCorePlugin : TritonPluginBase
     {
-	    public class PingStats
-	    {
-		    public DateTime TimeRequestSentUtc { get; set; }
-		    public DateTime TimeRequestEnqueuedUtc { get; set; }
-		    public DateTime TimeRequestReceivedUtc { get; set; }
-		    public DateTime TimeResponseSentUtc { get; set; }
-		    public DateTime TimeResponseEnqueuedUtc { get; set; }
-		    public DateTime TimeResponseRecievedUtc { get; set; }
-		    public string TargetQueue { get; set; }
-		    public string TargetSession { get; set; }
-
-		    public TimeSpan RoundTripTime => TimeResponseRecievedUtc - TimeRequestSentUtc;
-		    public TimeSpan QueuedTime => (TimeRequestReceivedUtc - TimeRequestEnqueuedUtc) + (TimeResponseRecievedUtc - TimeResponseEnqueuedUtc);
-		    public TimeSpan RequestDuration => TimeRequestReceivedUtc - TimeRequestSentUtc;
-		    public TimeSpan ResponseDuration => TimeResponseRecievedUtc - TimeResponseSentUtc;
-	    }
-
 		private const string DesiredAliasKey = "Desired Alias";
 		private const string AliasTokenKey = "Alias Token";
 		private const string RegisteredEventName = "Registered";
@@ -78,9 +62,47 @@ namespace Soei.Triton2.Common.Plugins
 		    return responseToken;
 	    }
 
-	    public async Task<PingStats> PingServer()
+	    public async Task<PingStats> PingServer(TimeSpan? timeOut = null, CancellationToken? cancellationToken = null)
 	    {
-		    return new PingStats();
+		    var retVal = new PingStats();
+		    var message = MessageFactory.CreateNewMessage("Ping");
+		    message[nameof(PingStats.TimeRequestSentUtc)] = DateTime.UtcNow;
+		    message.TimeToLive = timeOut ?? TimeSpan.FromSeconds(30);
+		    await Communicator.SendToServerAsync(message);
+		    var response = await Communicator.WaitForReplyTo(message, cancellationToken);
+		    if (response.Label != "Ping Response")
+		    {
+			    Logger.Warn("Server did not respond to ping within 30 seconds");
+			    return null;
+		    }
+		    retVal.TimeResponseRecievedUtc = DateTime.UtcNow;
+		    retVal.TimeResponseEnqueuedUtc = response.EnqueuedTimeUtc;
+		    retVal.TimeRequestEnqueuedUtc = (DateTime)(response[nameof(PingStats.TimeRequestEnqueuedUtc)] ?? DateTime.MinValue);
+		    retVal.TimeRequestReceivedUtc = (DateTime)(response[nameof(PingStats.TimeRequestReceivedUtc)] ?? DateTime.MinValue);
+		    retVal.TimeResponseSentUtc = (DateTime)(response[nameof(PingStats.TimeResponseSentUtc)] ?? DateTime.MinValue);
+		    return retVal;
+	    }
+
+	    public async Task<PingStats> PingClient(string identifier, TimeSpan? timeOut = null, CancellationToken? cancellationToken = null)
+	    {
+		    var retVal = new PingStats();
+		    var message = MessageFactory.CreateNewMessage("Ping");
+		    message[nameof(PingStats.TimeRequestSentUtc)] = DateTime.UtcNow;
+		    message.TimeToLive = timeOut ?? TimeSpan.FromSeconds(30);
+		    message.TargetSession = identifier;
+		    await Communicator.SendToClientAsync(message);
+		    var response = await Communicator.WaitForReplyTo(message, cancellationToken);
+		    if (response.Label != "Ping Response")
+		    {
+			    Logger.Warn("Server did not respond to ping within 30 seconds");
+			    return null;
+		    }
+		    retVal.TimeResponseRecievedUtc = DateTime.UtcNow;
+		    retVal.TimeResponseEnqueuedUtc = response.EnqueuedTimeUtc;
+		    retVal.TimeRequestEnqueuedUtc = (DateTime)(response[nameof(PingStats.TimeRequestEnqueuedUtc)] ?? DateTime.MinValue);
+		    retVal.TimeRequestReceivedUtc = (DateTime)(response[nameof(PingStats.TimeRequestReceivedUtc)] ?? DateTime.MinValue);
+		    retVal.TimeResponseSentUtc = (DateTime)(response[nameof(PingStats.TimeResponseSentUtc)] ?? DateTime.MinValue);
+		    return retVal;
 		    
 	    }
     }
