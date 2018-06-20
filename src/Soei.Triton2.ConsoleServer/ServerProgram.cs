@@ -33,7 +33,7 @@ namespace Soei.Triton2.ConsoleServer
 		    var configuration = new ServiceBusConfiguration
 		    (
 			    new ServiceBusConnection(Environment.GetEnvironmentVariable(TritonConstants.ConnectionKey) ?? throw new ArgumentException($"Environment variable '{TritonConstants.ConnectionKey}' is not configured")),
-			    Guid.NewGuid().ToString()
+			    $"Server {Guid.NewGuid()}"
 		    );
 		    var implementations = new TritonServiceBusImplementations(configuration)
 		    {

@@ -19,15 +19,6 @@ namespace Soei.Triton2.ServiceBus
 		    InnerMessage = innerMessage;
 	    }
 
-	    #region Implementation of ICloneable
-
-	    public object Clone()
-	    {
-		    return new ServiceBusMessage(InnerMessage);
-	    }
-
-	    #endregion
-
 	    #region Implementation of IMessage
 
 	    public string Identifier

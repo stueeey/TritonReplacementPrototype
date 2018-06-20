@@ -14,7 +14,7 @@ namespace Soei.Triton2.Common
 	    public static string GetMessageBodyAsString(this IMessage message) => Encoding.UTF8.GetString(message.Body);
 	    public static void SetMessageBodyAsString(this IMessage message, string body) => message.Body = Encoding.UTF8.GetBytes(body);
 
-	    public static string GetProperty(this IMessage message, string key)
+	    public static string GetStringProperty(this IMessage message, string key)
 	    {
 			return message.Properties.TryGetValue(key, out var value) 
 				? value.ToString()
@@ -27,7 +27,7 @@ namespace Soei.Triton2.Common
 		    if (source == null) throw new ArgumentNullException(nameof(source));
 		    if (propertyKeys == null || !propertyKeys.Any())
 		    {
-			    foreach (var property in source.Properties.Keys)
+			    foreach (var property in source.Properties.Keys.Where(k => !k.StartsWith("x-opt-")))
 				    target.Properties[property] = source.Properties[property];
 		    }
 		    else

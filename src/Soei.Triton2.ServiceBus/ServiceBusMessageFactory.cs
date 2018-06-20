@@ -58,6 +58,25 @@ namespace Soei.Triton2.ServiceBus
 		    return response;
 	    }
 
+	    public IMessage CloneMessage(IMessage message)
+	    {
+		    var clone = new ServiceBusMessage
+		    { 
+			    Identifier = message.Identifier, 
+			    Body = message.Body, 
+			    BodyType = message.BodyType, 
+			    Label = message.Label, 
+			    ReplyToEntity = message.ReplyToEntity, 
+			    ReplyToSession = message.ReplyToSession, 
+			    ResponseTo = message.ResponseTo, 
+			    TargetSession = message.TargetSession, 
+			    TimeToLive = message.TimeToLive, 
+			    To = message.To
+		    };
+		    clone.CopyPropertiesFrom(message);
+		    return clone;
+	    }
+
 	    #endregion
     }
 }

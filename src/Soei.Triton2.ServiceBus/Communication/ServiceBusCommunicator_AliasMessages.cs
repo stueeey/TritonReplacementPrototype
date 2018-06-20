@@ -28,14 +28,14 @@ namespace Soei.Triton2.ServiceBus.Communication
 				{
 					_aliasSessionListenCancellationToken = new CancellationTokenSource();
 					Logger.Debug("Listening for alias messages");
-					_aliasSessionListenTask = StartListeningForAliasMessages(_clientSessionListenCancellationToken.Token);
+					_aliasSessionListenTask = StartListeningForAliasMessages(_aliasSessionListenCancellationToken.Token);
 				}
 				else if (AliasQueueListener.IsValueCreated)
 				{
 					Logger.Debug("Stopped listening for alias messages");
 					_aliasSessionListenCancellationToken.Cancel();
-					_clientSessionListenTask.Wait();
-					_clientSessionListenTask = null;
+					_aliasSessionListenTask.Wait();
+					_aliasSessionListenTask = null;
 					AliasQueueListener.Value.CloseAsync().Wait();
 				}
 			}
@@ -43,7 +43,7 @@ namespace Soei.Triton2.ServiceBus.Communication
 
 		private void OnAliasMessageReceived(IMessage m, ref MessageReceivedEventArgs e)
 		{
-			Logger.Debug($"Received a new alias message with label {m.Label} for {m.TargetSession}");
+			Logger.Debug($"Received a new alias message with label {m.Label} for {m[TritonConstants.TargetAliasKey] ?? "<Unknown>"}");
 			CheckIfAnyoneIsWaitingForMessage(m, e);
 		}
 

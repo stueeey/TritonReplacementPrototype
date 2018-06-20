@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Soei.Triton2.Common.Abstractions
 {
-    public interface IMessage : ICloneable
+    public interface IMessage
     {
 	    string Identifier { get; set; }
 	    string Label { get; set; }

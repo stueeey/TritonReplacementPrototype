@@ -6,5 +6,6 @@
 	    IMessage CreateReply(IMessage receivedMessage);
 	    IMessage CreateAcknowledgment(IMessage receivedMessage);
 	    IMessage CreateNegativeAcknowledgment(IMessage receivedMessage, string reason);
+	    IMessage CloneMessage(IMessage message);
     }
 }
