@@ -59,10 +59,12 @@ namespace Soei.Triton2.ServiceBus.Communication
 					var message = await _activeClientSession.ReceiveAsync();
 					if (message != null)
 					{
+						var sbMessage = new ServiceBusMessage(message);
+						AnyMessageReceived?.Invoke(sbMessage, ApolloQueue.ClientSessions);
 						await Task.Run(() => InvokeMessageHandlers(
 							_activeClientSession,
 							_clientSessionMessageReceivedDelegate,
-							new ServiceBusMessage(message),
+							sbMessage,
 							_clientSessionListenCancellationToken.Token,
 							OnClientSessionMessageReceived));
 					}
@@ -88,7 +90,11 @@ namespace Soei.Triton2.ServiceBus.Communication
 			if (!messages.Any())
 				throw new InvalidOperationException("Tried to send an empty array of messages to a client");
 			if (messages.All(m => m is ServiceBusMessage))
-				await ClientSessionSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage)m).InnerMessage).ToArray());
+			{
+				foreach (var message in messages)
+					AnyMessageSent?.Invoke(message, ApolloQueue.ClientSessions);
+				await ClientSessionSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
+			}
 			else
 				throw new InvalidOperationException($"{GetType().Name} cannot send messages which do not inherit from {nameof(ServiceBusMessage)}");
 		}

@@ -8,5 +8,7 @@ namespace Soei.Triton2.Common.Abstractions
 	    T GetPlugin<T>() where T : TritonPluginBase;
 	    void LoadPlugins(params TritonPluginBase[] tritonPluginsBase);
 	    string Identifier { get; }
+
+	    IServiceCommunicator Communicator { get; }
     }
 }

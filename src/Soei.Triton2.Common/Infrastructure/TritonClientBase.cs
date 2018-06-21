@@ -7,7 +7,7 @@ namespace Soei.Triton2.Common.Infrastructure
 {
     public class TritonClientBase : ITritonClientBase
     {
-	    protected IServiceCommunicator Communicator { get; set; }
+	    public IServiceCommunicator Communicator { get; protected set; }
 
 	    protected IDictionary<Type, TritonPluginBase> Plugins { get; set; } = new Dictionary<Type, TritonPluginBase>();
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -169,6 +170,9 @@ namespace Soei.Triton2.ServiceBus.Communication
 					ListenForAliasMessages = false;
 			}
 		}
+
+		public event OnMessageSent AnyMessageSent;
+		public event OnMessageReceived AnyMessageReceived;
 
 		public event OnMessageReceivedDelegate ClientSessionMessageReceived
 		{

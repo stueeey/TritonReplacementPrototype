@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
 using Soei.Triton2.Common.Infrastructure;
@@ -8,6 +10,8 @@ namespace Soei.Triton2.Common.Abstractions
 {
 	public delegate void OnMessageReceivedDelegate(IMessage message, ref MessageReceivedEventArgs e);
 	public delegate void PluginEventDelegate(string eventName, object state);
+	public delegate void OnMessageReceived(IMessage message, ApolloQueue queue);
+	public delegate void OnMessageSent(IMessage message, ApolloQueue queue);
 
 	public interface IServiceCommunicator : IDisposable
 	{
@@ -37,6 +41,9 @@ namespace Soei.Triton2.Common.Abstractions
 		event OnMessageReceivedDelegate RegistrationReceived;
 		event OnMessageReceivedDelegate ServerJobReceived;
 		event OnMessageReceivedDelegate AliasMessageReceived;
+		event OnMessageSent AnyMessageSent;
+		event OnMessageReceived AnyMessageReceived;
+
 		Task<IMessage> WaitForReplyTo(IMessage message, CancellationToken? token = null, TimeSpan? timeout = null);
 	}
 }

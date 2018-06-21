@@ -54,10 +54,12 @@ namespace Soei.Triton2.ServiceBus.Communication
 				var message = await AliasQueueListener.Value.ReceiveAsync();
 				if (message != null)
 				{
+					var sbMessage = new ServiceBusMessage(message);
+					AnyMessageReceived?.Invoke(sbMessage, ApolloQueue.Aliases);
 					await Task.Run(() => InvokeMessageHandlers(
 						AliasQueueListener.Value,
 						_aliasMessageReceivedDelegate,
-						new ServiceBusMessage(message),
+						sbMessage,
 						_aliasSessionListenCancellationToken.Token,
 						OnAliasMessageReceived), cancellationToken);
 				}
@@ -73,7 +75,10 @@ namespace Soei.Triton2.ServiceBus.Communication
 			if (messages.All(m => m is ServiceBusMessage))
 			{
 				foreach (var message in messages)
+				{
 					message.Properties[TritonConstants.TargetAliasKey] = alias;
+					AnyMessageSent?.Invoke(message, ApolloQueue.Aliases);
+				}
 				await AliasQueueSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
 			}
 			else

@@ -18,6 +18,17 @@ namespace Soei.Triton2.Common.Infrastructure
 	    public const string RegisteredAsKey = "Registered As";
 	    public const string TargetAliasKey = "Target Alias";
 
+		// Standard state labels
+	    public const string NumberOfMessagesSentToRegistrations   = "# Messages Sent to Registrations";
+	    public const string NumberOfMessagesSentToServerRequests  = "# Messages Sent to ServerRequests";
+	    public const string NumberOfMessagesSentToAliases         = "# Messages Sent to Aliases";
+	    public const string NumberOfMessagesSentToClientSessions  = "# Messages Sent to ClientSessions";
+
+	    public const string NumberOfMessagesReceivedFromRegistrations   = "# Messages received from Registrations";
+	    public const string NumberOfMessagesReceivedFromServerRequests  = "# Messages received from ServerRequests";
+	    public const string NumberOfMessagesReceivedFromAliases         = "# Messages received from Aliases";
+	    public const string NumberOfMessagesReceivedFromClientSessions  = "# Messages received from ClientSessions";
+
 	    public static readonly TimeSpan MaximumReplyWaitTime = TimeSpan.FromHours(1);
     }
 }
