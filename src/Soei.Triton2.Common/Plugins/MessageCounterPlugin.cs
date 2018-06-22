@@ -17,16 +17,16 @@ namespace Soei.Triton2.Common.Plugins
 				switch (queue)
 				{
 					case ApolloQueue.Registrations:
-						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesReceivedFromRegistrations, 1, (key, existingValue) => (ulong) existingValue + 1);
+						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesReceivedFromRegistrations, 1ul, (key, existingValue) => (ulong) existingValue + 1ul);
 						break;
 					case ApolloQueue.ServerRequests:
-						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesReceivedFromServerRequests, 1, (key, existingValue) => (ulong) existingValue + 1);
+						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesReceivedFromServerRequests, 1ul, (key, existingValue) => (ulong) existingValue + 1ul);
 						break;
 					case ApolloQueue.Aliases:
-						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesReceivedFromAliases, 1, (key, existingValue) => (ulong) existingValue + 1);
+						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesReceivedFromAliases, 1ul, (key, existingValue) => (ulong) existingValue + 1ul);
 						break;
 					case ApolloQueue.ClientSessions:
-						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesReceivedFromClientSessions, 1, (key, existingValue) => (ulong) existingValue + 1);
+						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesReceivedFromClientSessions, 1ul, (key, existingValue) => (ulong) existingValue + 1ul);
 						break;
 					default:
 						throw new ArgumentOutOfRangeException(nameof(queue), queue, null);
@@ -38,16 +38,16 @@ namespace Soei.Triton2.Common.Plugins
 				switch (queue)
 				{
 					case ApolloQueue.Registrations:
-						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesSentToRegistrations, 1, (key, existingValue) => (ulong) existingValue + 1);
+						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesSentToRegistrations, 1ul, (key, existingValue) => (ulong) existingValue + 1ul);
 						break;
 					case ApolloQueue.ServerRequests:
-						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesSentToServerRequests, 1, (key, existingValue) => (ulong) existingValue + 1);
+						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesSentToServerRequests, 1ul, (key, existingValue) => (ulong) existingValue + 1ul);
 						break;
 					case ApolloQueue.Aliases:
-						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesSentToAliases, 1, (key, existingValue) => (ulong) existingValue + 1);
+						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesSentToAliases, 1ul, (key, existingValue) => (ulong) existingValue + 1ul);
 						break;
 					case ApolloQueue.ClientSessions:
-						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesSentToClientSessions, 1, (key, existingValue) => (ulong) existingValue + 1);
+						Communicator.State.AddOrUpdate(TritonConstants.NumberOfMessagesSentToClientSessions, 1ul, (key, existingValue) => (ulong) existingValue + 1ul);
 						break;
 					default:
 						throw new ArgumentOutOfRangeException(nameof(queue), queue, null);

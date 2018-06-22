@@ -92,7 +92,16 @@ namespace Soei.Triton2.ServiceBus.Communication
 			if (messages.All(m => m is ServiceBusMessage))
 			{
 				foreach (var message in messages)
-					AnyMessageSent?.Invoke(message, ApolloQueue.ClientSessions);
+				{
+					try
+					{
+						AnyMessageSent?.Invoke(message, ApolloQueue.ClientSessions);
+					}
+					catch (Exception ex)
+					{
+						Logger.Error("Encountered an exception while invoking 'AnyMessageSent'", ex);
+					}
+				}
 				await ClientSessionSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
 			}
 			else

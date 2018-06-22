@@ -51,7 +51,7 @@ namespace Soei.Apollo.ServerWorker
 			    ServerPlugins = new TritonPluginBase[]
 			    {
 				    new EchoListenerPlugin(),
-				    //new MessageCounterPlugin()
+				    new MessageCounterPlugin()
 			    }
 		    };
 		    var container = new StandardKernel(implementations);

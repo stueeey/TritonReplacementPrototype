@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Ninject;
 using Soei.Triton2.Common.Abstractions;
@@ -41,7 +42,7 @@ namespace Soei.Apollo.ServerWorker.Controllers
 		        ListeningForRegistrationRequests = _server.Communicator.ListenForRegistrations,
 		        ListeningForAliasMessages = _server.Communicator.ListenForAliasMessages,
 		        ListeningForClientSessionMessages = _server.Communicator.ListenForClientSessionMessages,
-		        State = _server.Communicator.State.ToArray(),
+		        State = _server.Communicator.State.OrderBy(e => e.Key).ToArray(),
 		        Uptime = DateTime.Now - Process.GetCurrentProcess().StartTime
 		        
 	        };
