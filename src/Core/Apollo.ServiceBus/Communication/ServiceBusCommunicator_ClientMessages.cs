@@ -49,13 +49,12 @@ namespace Apollo.ServiceBus.Communication
 
 		private async Task StartListeningForClientMessages()
 		{
-			_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[TritonConstants.RegisteredAsKey].ToString());
-			while (_activeClientSession != null && _clientSessionListenCancellationToken != null &&
-			       !_clientSessionListenCancellationToken.Token.IsCancellationRequested)
+			_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[TritonConstants.RegisteredAsKey].ToString(), TimeSpan.FromMinutes(30));
+			while (_activeClientSession != null && _clientSessionListenCancellationToken != null && !_clientSessionListenCancellationToken.Token.IsCancellationRequested)
 			{
 				try
 				{
-					var message = await _activeClientSession.ReceiveAsync();
+					var message = await _activeClientSession.ReceiveAsync(TimeSpan.FromSeconds(60));
 					if (message != null)
 					{
 						var sbMessage = new ServiceBusMessage(message);
@@ -70,9 +69,34 @@ namespace Apollo.ServiceBus.Communication
 				}
 				catch (SessionLockLostException)
 				{
+					Logger.Info("Renewing session lock");
 					if (_activeClientSession == null)
 						throw;
-					await _activeClientSession.RenewSessionLockAsync();
+					var waitTime = TimeSpan.FromMilliseconds(500);
+					while (true)
+					{
+						try
+						{
+							await _activeClientSession.RenewSessionLockAsync();
+							break;
+						}
+						catch (Exception renewException)
+						{
+							// Sometimes necessary when there are connection issues
+							Logger.Warn("Encountered error while re-aquiring session lock, will create new session lock", renewException);
+							
+							try
+							{
+								_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[TritonConstants.RegisteredAsKey].ToString(), TimeSpan.FromMinutes(30));
+							}
+							catch (Exception recreateException)
+							{
+								Logger.Warn($"Encountered error while creating new session lock, will wait and try again in {waitTime.TotalSeconds} seconds", recreateException);
+							}
+							await Task.Delay(waitTime);
+							waitTime = TimeSpan.FromMilliseconds(waitTime.TotalMilliseconds * 2);
+						}
+					}
 				}
 				catch (ServiceBusTimeoutException ex)
 				{
