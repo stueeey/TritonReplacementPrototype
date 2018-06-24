@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Apollo.Common.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Ninject;
-using Soei.Apollo.Common.Abstractions;
-using Soei.Apollo.Common.Infrastructure;
 
-namespace Soei.Apollo.ServerWorker.Controllers
+namespace Apollo.ServerWorker.Controllers
 {
     [Route("api/[controller]")]
     public class ServerInstanceController : Controller

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Soei.Apollo.Common.Abstractions
+namespace Apollo.Common.Abstractions
 {
     public interface ITritonClient : ITritonClientBase
     {

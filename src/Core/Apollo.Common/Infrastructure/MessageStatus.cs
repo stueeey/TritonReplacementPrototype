@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Soei.Apollo.Common.Infrastructure
+namespace Apollo.Common.Infrastructure
 {
 	[Flags]
 	public enum MessageStatus

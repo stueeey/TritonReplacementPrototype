@@ -2,7 +2,7 @@
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 
-namespace Soei.Apollo.ServiceBus.Communication
+namespace Apollo.ServiceBus.Communication
 {
     public interface IServiceBusImplementations
     {

@@ -1,10 +1,10 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Linq;
 using System.Text;
-using Soei.Apollo.Common.Abstractions;
+using Apollo.Common.Abstractions;
+using Microsoft.Win32;
 
-namespace Soei.Apollo.Common
+namespace Apollo.Common
 {
     public static class TritonHelpers
     {

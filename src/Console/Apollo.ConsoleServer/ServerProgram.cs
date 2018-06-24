@@ -1,18 +1,16 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using Apollo.Common.Abstractions;
+using Apollo.Common.Infrastructure;
+using Apollo.ServiceBus;
+using Apollo.ServiceBus.Ninject;
 using log4net;
 using log4net.Config;
 using Microsoft.Azure.ServiceBus;
 using Ninject;
-using Soei.Apollo.Common;
-using Soei.Apollo.Common.Abstractions;
-using Soei.Apollo.Common.Infrastructure;
-using Soei.Apollo.ServiceBus;
-using Soei.Apollo.ServiceBus.Ninject;
 
-namespace Soei.Apollo.ConsoleServer
+namespace Apollo.ConsoleServer
 {
 	class ServerProgram
     {
@@ -32,7 +30,7 @@ namespace Soei.Apollo.ConsoleServer
 	    {
 		    var configuration = new ServiceBusConfiguration
 		    (
-			    new ServiceBusConnection(Environment.GetEnvironmentVariable(TritonConstants.ConnectionKey) ?? throw new ArgumentException($"Environment variable '{TritonConstants.ConnectionKey}' is not configured")),
+			    new ServiceBusConnectionStringBuilder(Environment.GetEnvironmentVariable(TritonConstants.ConnectionKey) ?? throw new ArgumentException($"Environment variable '{TritonConstants.ConnectionKey}' is not configured")),
 			    $"Server {Guid.NewGuid()}"
 		    );
 		    var implementations = new TritonServiceBusImplementations(configuration)

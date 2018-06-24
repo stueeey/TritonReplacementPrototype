@@ -1,4 +1,4 @@
-﻿namespace Soei.Apollo.Common.Abstractions
+﻿namespace Apollo.Common.Abstractions
 {
 	public enum ApolloQueue
 	{

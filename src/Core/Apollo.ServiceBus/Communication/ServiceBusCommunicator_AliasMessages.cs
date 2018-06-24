@@ -2,12 +2,10 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.ServiceBus;
-using Soei.Apollo.Common;
-using Soei.Apollo.Common.Abstractions;
-using Soei.Apollo.Common.Infrastructure;
+using Apollo.Common.Abstractions;
+using Apollo.Common.Infrastructure;
 
-namespace Soei.Apollo.ServiceBus.Communication
+namespace Apollo.ServiceBus.Communication
 {
 	public partial class ServiceBusCommunicator
 	{

@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Apollo.Common.Abstractions;
 using Microsoft.Azure.ServiceBus;
-using Soei.Apollo.Common;
-using Soei.Apollo.Common.Abstractions;
 
-namespace Soei.Apollo.ServiceBus
+namespace Apollo.ServiceBus
 {
     public class ServiceBusMessage : IMessage
     {

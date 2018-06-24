@@ -1,7 +1,7 @@
 ﻿using System.Threading;
-using Soei.Apollo.Common.Abstractions;
+using Apollo.Common.Abstractions;
 
-namespace Soei.Apollo.Common.Infrastructure
+namespace Apollo.Common.Infrastructure
 {
 	public class MessageReceivedEventArgs
 	{

@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Soei.Apollo.Common.Infrastructure;
+using Apollo.Common.Infrastructure;
 
-namespace Soei.Apollo.Common.Abstractions
+namespace Apollo.Common.Abstractions
 {
 	public delegate void OnMessageReceivedDelegate(IMessage message, ref MessageReceivedEventArgs e);
 	public delegate void PluginEventDelegate(string eventName, object state);

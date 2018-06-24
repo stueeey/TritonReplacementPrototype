@@ -1,9 +1,9 @@
 ﻿using System;
-using Soei.Apollo.Common;
-using Soei.Apollo.Common.Abstractions;
-using Soei.Apollo.Common.Infrastructure;
+using Apollo.Common;
+using Apollo.Common.Abstractions;
+using Apollo.Common.Infrastructure;
 
-namespace Soei.Apollo.ServiceBus
+namespace Apollo.ServiceBus
 {
     public class ServiceBusMessageFactory : IMessageFactory
     {

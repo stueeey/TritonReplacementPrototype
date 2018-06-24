@@ -1,6 +1,13 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using Apollo.Common.Abstractions;
+using Apollo.Common.Infrastructure;
+using Apollo.Common.Plugins;
+using Apollo.ServerWorker.Plugins;
+using Apollo.ServerWorker.Services;
+using Apollo.ServiceBus;
+using Apollo.ServiceBus.Ninject;
 using log4net;
 using log4net.Config;
 using Microsoft.AspNetCore.Builder;
@@ -11,20 +18,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Ninject;
 using Ninject.Infrastructure.Disposal;
-using Soei.Apollo.ServerWorker.Plugins;
-using Soei.Apollo.ServerWorker.Services;
-using Soei.Apollo.Common.Abstractions;
-using Soei.Apollo.Common.Infrastructure;
-using Soei.Apollo.Common.Plugins;
-using Soei.Apollo.ServiceBus;
-using Soei.Apollo.ServiceBus.Ninject;
 
-namespace Soei.Apollo.ServerWorker
+namespace Apollo.ServerWorker
 {
     public class Startup
     {
-	    private sealed class Scope : DisposableObject { }
-
 	    public ITritonServer ServerWorker { get; private set; }
 
 	    public Startup(IConfiguration configuration)
@@ -43,7 +41,7 @@ namespace Soei.Apollo.ServerWorker
 			                    Environment.GetEnvironmentVariable(TritonConstants.ConnectionKey, EnvironmentVariableTarget.Machine);
 		    var configuration = new ServiceBusConfiguration
 		    (
-			    new ServiceBusConnection(connectionKey ?? throw new ArgumentException($"Environment variable '{TritonConstants.ConnectionKey}' is not configured")),
+			    new ServiceBusConnectionStringBuilder(connectionKey ?? throw new ArgumentException($"Environment variable '{TritonConstants.ConnectionKey}' is not configured")),
 			    $"Server {Guid.NewGuid()}"
 		    );
 		    var implementations = new TritonServiceBusImplementations(configuration)

@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Soei.Apollo.Common;
-using Soei.Apollo.Common.Abstractions;
-using Soei.Apollo.Common.Infrastructure;
+using Apollo.Common.Abstractions;
+using Apollo.Common.Infrastructure;
 
-namespace Soei.Apollo.ConsoleServer
+namespace Apollo.ConsoleServer
 {
 	public class EchoListenerPlugin : TritonPluginBase
 	{

@@ -1,11 +1,11 @@
-﻿using Ninject.Modules;
-using System;
-using Soei.Apollo.Common;
-using Soei.Apollo.Common.Abstractions;
-using Soei.Apollo.Common.Infrastructure;
-using Soei.Apollo.ServiceBus.Communication;
+﻿using System;
+using Apollo.Common;
+using Apollo.Common.Abstractions;
+using Apollo.Common.Infrastructure;
+using Apollo.ServiceBus.Communication;
+using Ninject.Modules;
 
-namespace Soei.Apollo.ServiceBus.Ninject
+namespace Apollo.ServiceBus.Ninject
 {
 	public class TritonServiceBusImplementations : NinjectModule
     {

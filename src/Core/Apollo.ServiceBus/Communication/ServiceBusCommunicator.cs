@@ -4,15 +4,14 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Apollo.Common.Abstractions;
+using Apollo.Common.Infrastructure;
+using Apollo.ServiceBus.Infrastructure;
 using log4net;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
-using Soei.Apollo.Common;
-using Soei.Apollo.Common.Abstractions;
-using Soei.Apollo.Common.Infrastructure;
-using Soei.Apollo.ServiceBus.Infrastructure;
 
-namespace Soei.Apollo.ServiceBus.Communication
+namespace Apollo.ServiceBus.Communication
 {
 	public partial class ServiceBusCommunicator : IServiceCommunicator
 	{

@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using Soei.Apollo.Common.Abstractions;
-using Soei.Apollo.Common.Infrastructure;
-using Soei.Apollo.Common.Plugins;
+﻿using Apollo.Common.Abstractions;
+using Apollo.Common.Infrastructure;
+using Apollo.Common.Plugins;
 
-namespace Soei.Apollo.Common
+namespace Apollo.Common
 {
     public class TritonServer : TritonClientBase, ITritonServer
     {

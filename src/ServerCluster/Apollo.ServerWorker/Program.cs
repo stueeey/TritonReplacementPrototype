@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
-namespace Soei.Apollo.ServerWorker
+namespace Apollo.ServerWorker
 {
     public class Program
     {

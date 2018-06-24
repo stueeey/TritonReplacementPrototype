@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
-using Soei.Apollo.Common.Abstractions;
-using Soei.Apollo.Common.Infrastructure;
+using Apollo.Common.Infrastructure;
 
-namespace Soei.Apollo.Common.Plugins
+namespace Apollo.Common.Plugins
 {
     public class ClientCorePlugin : CorePlugin
     {

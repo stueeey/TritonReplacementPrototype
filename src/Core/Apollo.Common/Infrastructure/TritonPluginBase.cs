@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using Apollo.Common.Abstractions;
 using log4net;
-using Soei.Apollo.Common.Abstractions;
 
-namespace Soei.Apollo.Common.Infrastructure
+namespace Apollo.Common.Infrastructure
 {
 	public class PluginCollection : List<TritonPluginBase>
 	{

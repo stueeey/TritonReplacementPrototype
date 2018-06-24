@@ -1,7 +1,7 @@
 ﻿using System;
-using Soei.Apollo.Common.Infrastructure;
+using Apollo.Common.Infrastructure;
 
-namespace Soei.Apollo.Common.Abstractions
+namespace Apollo.Common.Abstractions
 {
     public interface ITritonClientBase : IDisposable
     {

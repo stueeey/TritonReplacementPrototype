@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Soei.Apollo.Common.Abstractions;
+using Apollo.Common.Abstractions;
 
-namespace Soei.Apollo.ConsoleServer
+namespace Apollo.ConsoleServer
 {
 	public class InMemoryRegistrationStorage : IRegistrationStorage
 	{

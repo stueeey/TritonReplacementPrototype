@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Soei.Apollo.Common.Abstractions
+namespace Apollo.Common.Abstractions
 {
 	public interface IRegistrationStorage
 	{

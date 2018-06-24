@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 
-namespace Soei.Apollo.Common.Plugins
+namespace Apollo.Common.Plugins
 {
 
 	public class PingStats
