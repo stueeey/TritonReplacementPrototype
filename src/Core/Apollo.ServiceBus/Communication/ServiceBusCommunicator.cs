@@ -30,6 +30,7 @@ namespace Apollo.ServiceBus.Communication
 
 		private static readonly ILog ClassLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{TritonConstants.LoggerInternalsPrefix}.{MethodBase.GetCurrentMethod().DeclaringType.Name}");
 		protected ILog Logger { get; private set; }
+		protected ServiceBusConfiguration Configuration { get; }
 
 		private IServiceBusImplementations Impl { get; }
 		protected Lazy<IMessageReceiver> RegistrationListener => Impl.RegistrationListener;
@@ -98,11 +99,11 @@ namespace Apollo.ServiceBus.Communication
 		{
 			SetLogger();
 
-			if (configuration == null)
-				throw new ArgumentNullException(nameof(configuration));
-			State[TritonConstants.RegisteredAsKey] = configuration.ClientIdentifier;
-			MessageFactory = new ServiceBusMessageFactory(ServiceBusConstants.DefaultRegisteredClientsQueue, configuration.ClientIdentifier);
+			Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+			State[TritonConstants.RegisteredAsKey] = configuration.Identifier;
+			MessageFactory = new ServiceBusMessageFactory(ServiceBusConstants.DefaultRegisteredClientsQueue, configuration.Identifier);
 			Impl = serviceBusImplementations ?? new DefaultServiceBusImplementations(configuration);
+			Logger.Info("Connecting to service bus with the following settings:");
 		}
 
 		public T GetState<T>(string key)
@@ -288,11 +289,7 @@ namespace Apollo.ServiceBus.Communication
 			ListenForClientSessionMessages = false;
 			ListenForRegistrations = false;
 			ListenForServerJobs = false;
-		}
-
-		public Task SendToAliasAsync(params IMessage[] messages)
-		{
-			throw new NotImplementedException();
+			Configuration.Connection?.CloseAsync().Wait();
 		}
 
 		#endregion

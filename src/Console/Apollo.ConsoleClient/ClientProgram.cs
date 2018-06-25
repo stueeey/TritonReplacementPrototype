@@ -51,12 +51,13 @@ namespace Apollo.ConsoleClient
 				    return;
 				if (CommandEquals(command, "ping self"))
 				{
-					for (var i = 0; i < 5; i++)
+					while (true)//for (var i = 0; i < 5; i++)
 					{
-						var result = await client.GetPlugin<ClientCorePlugin>().PingClient(client.Identifier, TimeSpan.FromSeconds(3));
+						var result = await client.GetPlugin<ClientCorePlugin>().PingClient(client.Identifier);
 						Console.WriteLine(result.ToString());
+						Thread.Sleep(3000);
 					}
-					continue;
+					//continue;
 				}
 				if (CommandEquals(command, "ping server"))
 				{
@@ -92,7 +93,7 @@ namespace Apollo.ConsoleClient
 			                      $"Environment variable '{TritonConstants.ConnectionKey}' is not configured");
 		    var configuration = new ServiceBusConfiguration
 		    (
-			    new ServiceBusConnectionStringBuilder(credentials),
+			    new ServiceBusConnectionStringBuilder(credentials) { TransportType = TransportType.AmqpWebSockets},
 			    Guid.NewGuid().ToString()
 		    );
 		    var implementations = new TritonServiceBusImplementations(configuration)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
@@ -72,40 +73,64 @@ namespace Apollo.ServiceBus.Communication
 					Logger.Info("Renewing session lock");
 					if (_activeClientSession == null)
 						throw;
-					var waitTime = TimeSpan.FromMilliseconds(500);
-					while (true)
-					{
-						try
-						{
-							await _activeClientSession.RenewSessionLockAsync();
-							break;
-						}
-						catch (Exception renewException)
-						{
-							// Sometimes necessary when there are connection issues
-							Logger.Warn("Encountered error while re-aquiring session lock, will create new session lock", renewException);
-							
-							try
-							{
-								_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[TritonConstants.RegisteredAsKey].ToString(), TimeSpan.FromMinutes(30));
-							}
-							catch (Exception recreateException)
-							{
-								Logger.Warn($"Encountered error while creating new session lock, will wait and try again in {waitTime.TotalSeconds} seconds", recreateException);
-							}
-							await Task.Delay(waitTime);
-							waitTime = TimeSpan.FromMilliseconds(waitTime.TotalMilliseconds * 2);
-						}
-					}
+					await ReaquireClientSessionLock();
 				}
 				catch (ServiceBusTimeoutException ex)
 				{
-					Logger.Warn("Timed out while trying to get session lock. Will retry", ex);
+					Logger.Warn($"Timed out while trying to get session lock ({ex.Message}). Will retry");
+					Logger.Debug(ex);
 					// Timed out reconnecting, just try again
 				}
 				catch (Exception ex)
 				{
 					Logger.Error("Encountered an exception while trying to receive client session messages", ex);
+				}
+			}
+		}
+
+		private async Task ReaquireClientSessionLock()
+		{
+			var waitTime = TimeSpan.FromMilliseconds(700);
+			while (true)
+			{
+				try
+				{
+					await _activeClientSession.RenewSessionLockAsync();
+					Logger.Info("Successfully aquired lock");
+					break;
+				}
+				catch (Exception renewException)
+				{
+					// Sometimes necessary when there are connection issues
+					Logger.Warn($"Encountered error while re-aquiring session lock ({renewException.Message}), will create new session lock");
+
+					try
+					{
+						_activeClientSession =
+							await ClientSessionListener.Value.AcceptMessageSessionAsync(State[TritonConstants.RegisteredAsKey].ToString(),
+								TimeSpan.FromMinutes(30));
+						Logger.Info("Successfully created a new session lock");
+
+						break;
+					}
+					catch (ServiceBusCommunicationException ex)
+					{
+						Logger.Warn($"Failed to get session lock ({ex.Message}), will wait and try again in {waitTime.TotalSeconds} seconds");
+					}
+					catch (Exception recreateException)
+					{
+						Logger.Warn(
+							$"Encountered error while creating new session lock, will wait and try again in {waitTime.TotalSeconds} seconds");
+						Logger.Debug(recreateException);
+						Configuration.Reconnect();
+						await Impl.Recreate();
+					}
+
+					await Task.Delay(waitTime, _clientSessionListenCancellationToken.Token);
+					if (_clientSessionListenCancellationToken.Token.IsCancellationRequested)
+						break;
+					waitTime = TimeSpan.FromMilliseconds(Math.Min(waitTime.TotalMilliseconds * 1.5,
+						TimeSpan.FromMinutes(1).TotalMilliseconds));
 				}
 			}
 		}
@@ -120,7 +145,14 @@ namespace Apollo.ServiceBus.Communication
 			{
 				foreach (var message in messages)
 					OnMessageSent(message, ApolloQueue.ClientSessions);
-				await ClientSessionSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
+				try
+				{
+					await ClientSessionSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
+				}
+				catch (Exception ex)
+				{
+					Logger.Warn(ex);
+				}
 			}
 			else
 				throw new InvalidOperationException($"{GetType().Name} cannot send messages which do not inherit from {nameof(ServiceBusMessage)}");

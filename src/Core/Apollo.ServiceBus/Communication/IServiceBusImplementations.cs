@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 
@@ -6,6 +7,8 @@ namespace Apollo.ServiceBus.Communication
 {
     public interface IServiceBusImplementations
     {
+	    Task Recreate();
+
 	    Lazy<IMessageReceiver> RegistrationListener { get; }
 	    Lazy<IMessageSender> RegistrationSender { get; }
 	    Lazy<IMessageReceiver> ServerQueueListener { get; }

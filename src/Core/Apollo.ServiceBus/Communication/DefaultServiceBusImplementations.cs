@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 
@@ -6,28 +7,52 @@ namespace Apollo.ServiceBus.Communication
 {
     public class DefaultServiceBusImplementations : IServiceBusImplementations
     {
+	    private readonly ServiceBusConfiguration _configuration;
 	    public DefaultServiceBusImplementations(ServiceBusConfiguration configuration)
 	    {
-		    RegistrationListener  = new Lazy<IMessageReceiver>(() => new MessageReceiver( configuration.Connection, configuration.RegistrationQueue,      ReceiveMode.PeekLock, RetryPolicy.Default));
-		    RegistrationSender    = new Lazy<IMessageSender>  (() => new MessageSender(   configuration.Connection, configuration.RegistrationQueue,      RetryPolicy.Default));
-		    ServerQueueListener   = new Lazy<IMessageReceiver>(() => new MessageReceiver( configuration.Connection, configuration.ServerRequestsQueue,    ReceiveMode.PeekLock, RetryPolicy.Default));
-		    ServerQueueSender     = new Lazy<IMessageSender>  (() => new MessageSender(   configuration.Connection, configuration.ServerRequestsQueue,    RetryPolicy.Default));
-		    ClientSessionListener = new Lazy<ISessionClient>  (() => new SessionClient(   configuration.Connection, configuration.RegisteredClientsQueue, ReceiveMode.PeekLock, RetryPolicy.Default));
-		    ClientSessionSender   = new Lazy<IMessageSender>  (() => new MessageSender(   configuration.Connection, configuration.RegisteredClientsQueue, RetryPolicy.Default));
-			AliasQueueListener    = new Lazy<IMessageReceiver>(() => new MessageReceiver( configuration.Connection, configuration.ClientAliasesQueue,     ReceiveMode.PeekLock, RetryPolicy.Default));
-			AliasQueueSender	  = new Lazy<IMessageSender>  (() => new MessageSender(   configuration.Connection, configuration.ClientAliasesQueue,     RetryPolicy.Default));
-		}
+		    _configuration = configuration;
+		    Recreate().Wait();
+	    }
 
 	    #region Implementation of IServiceBusImplementations
 
-	    public Lazy<IMessageReceiver> RegistrationListener { get; }
-	    public Lazy<IMessageSender> RegistrationSender { get; }
-	    public Lazy<IMessageReceiver> ServerQueueListener { get; }
-	    public Lazy<IMessageSender> ServerQueueSender { get; }
-	    public Lazy<ISessionClient> ClientSessionListener { get; }
-	    public Lazy<IMessageSender> ClientSessionSender { get; }
-		public Lazy<IMessageReceiver> AliasQueueListener { get; }
-		public Lazy<IMessageSender> AliasQueueSender { get; }
+	    public async Task Recreate()
+	    {
+		    if ((RegistrationListener?.IsValueCreated ?? false) && !RegistrationListener.Value.IsClosedOrClosing)
+			    await RegistrationListener.Value.CloseAsync();
+		    if ((RegistrationSender?.IsValueCreated ?? false) && !RegistrationSender.Value.IsClosedOrClosing)
+			    await RegistrationSender.Value.CloseAsync();
+		    if ((ServerQueueListener?.IsValueCreated ?? false) && !ServerQueueListener.Value.IsClosedOrClosing)
+			    await ServerQueueListener.Value.CloseAsync();
+		    if ((ServerQueueSender?.IsValueCreated ?? false) && !ServerQueueSender.Value.IsClosedOrClosing)
+			    await ServerQueueSender.Value.CloseAsync();
+		    if ((ClientSessionListener?.IsValueCreated ?? false) && !ClientSessionListener.Value.IsClosedOrClosing)
+			    await ClientSessionListener.Value.CloseAsync();
+		    if ((ClientSessionSender?.IsValueCreated ?? false) && !ClientSessionSender.Value.IsClosedOrClosing)
+			    await ClientSessionSender.Value.CloseAsync();
+		    if ((AliasQueueListener?.IsValueCreated ?? false) && !AliasQueueListener.Value.IsClosedOrClosing)
+			    await AliasQueueListener.Value.CloseAsync();
+		    if ((AliasQueueSender?.IsValueCreated ?? false) && !AliasQueueSender.Value.IsClosedOrClosing)
+			    await AliasQueueSender.Value.CloseAsync();
+
+		    RegistrationListener  = new Lazy<IMessageReceiver>(() => new MessageReceiver( _configuration.Connection, _configuration.RegistrationQueue,      ReceiveMode.PeekLock, _configuration.Connection.RetryPolicy));
+		    RegistrationSender    = new Lazy<IMessageSender>  (() => new MessageSender(   _configuration.Connection, _configuration.RegistrationQueue,      _configuration.Connection.RetryPolicy));
+		    ServerQueueListener   = new Lazy<IMessageReceiver>(() => new MessageReceiver( _configuration.Connection, _configuration.ServerRequestsQueue,    ReceiveMode.PeekLock, _configuration.Connection.RetryPolicy));
+		    ServerQueueSender     = new Lazy<IMessageSender>  (() => new MessageSender(   _configuration.Connection, _configuration.ServerRequestsQueue,    _configuration.Connection.RetryPolicy));
+		    ClientSessionListener = new Lazy<ISessionClient>  (() => new SessionClient(   _configuration.Connection, _configuration.RegisteredClientsQueue, ReceiveMode.PeekLock, _configuration.Connection.RetryPolicy));
+		    ClientSessionSender   = new Lazy<IMessageSender>  (() => new MessageSender(   _configuration.Connection, _configuration.RegisteredClientsQueue, _configuration.Connection.RetryPolicy));
+		    AliasQueueListener    = new Lazy<IMessageReceiver>(() => new MessageReceiver( _configuration.Connection, _configuration.ClientAliasesQueue,     ReceiveMode.PeekLock, _configuration.Connection.RetryPolicy));
+		    AliasQueueSender	  = new Lazy<IMessageSender>  (() => new MessageSender(   _configuration.Connection, _configuration.ClientAliasesQueue,     _configuration.Connection.RetryPolicy));
+	    }
+
+	    public Lazy<IMessageReceiver> RegistrationListener { get; set;}
+	    public Lazy<IMessageSender> RegistrationSender { get;  set;}
+	    public Lazy<IMessageReceiver> ServerQueueListener { get; set; }
+	    public Lazy<IMessageSender> ServerQueueSender { get; set; }
+	    public Lazy<ISessionClient> ClientSessionListener { get; set; }
+	    public Lazy<IMessageSender> ClientSessionSender { get; set; }
+		public Lazy<IMessageReceiver> AliasQueueListener { get; set; }
+		public Lazy<IMessageSender> AliasQueueSender { get; set; }
 
 		#endregion
 	}
