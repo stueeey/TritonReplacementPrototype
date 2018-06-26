@@ -64,9 +64,10 @@ namespace Apollo.ServiceBus.Communication
 			}
 		}
 
-		public async Task SendToAliasAsync(string alias, IMessage message) => await SendToAliasAsync(alias, new[] { message });
 
-		public async Task SendToAliasAsync(string alias, params IMessage[] messages)
+		public Task SendToAliasAsync(string alias, IMessage message, CancellationToken? token = null) => SendToAliasAsync(alias, token, message);
+		public Task SendToAliasAsync(string alias, params IMessage[] messages) => SendToAliasAsync(alias, null, messages);
+		public async Task SendToAliasAsync(string alias, CancellationToken? token, params IMessage[] messages)
 		{
 			if (!messages.Any())
 				throw new InvalidOperationException("Tried to send an empty array of messages");

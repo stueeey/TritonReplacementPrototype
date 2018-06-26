@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
+using Microsoft.Azure.ServiceBus;
 
 namespace Apollo.ServiceBus.Communication
 {
@@ -64,20 +65,38 @@ namespace Apollo.ServiceBus.Communication
 			}
 		}
 
-		public async Task SendRegistrationMessageAsync(IMessage message) => await SendRegistrationMessageAsync(new [] { message });
-
-		public async Task SendRegistrationMessageAsync(params IMessage[] messages)
+		public Task SendRegistrationMessageAsync(IMessage message, CancellationToken? token = null) => SendRegistrationMessageAsync(token, message);
+		public Task SendRegistrationMessageAsync(params IMessage[] messages) => SendRegistrationMessageAsync(null, messages);
+		public async Task SendRegistrationMessageAsync(CancellationToken? token, params IMessage[] messages)
 		{
 			if (!messages.Any())
 				throw new InvalidOperationException("Tried to send an empty array of registration messages");
-			if (messages.All(m => m is ServiceBusMessage))
-			{
-				foreach (var message in messages)
-					OnMessageSent(message, ApolloQueue.Registrations);
-				await RegistrationSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
-			}
-			else
+			if (!messages.All(m => m is ServiceBusMessage))
 				throw new InvalidOperationException($"{GetType().Name} cannot send messages which do not inherit from {nameof(ServiceBusMessage)}");
+			var waitTime = TimeSpan.FromSeconds(0.5);
+			while (true)
+			{
+				try
+				{
+					await RegistrationSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
+					break;
+				}
+				catch (Exception ex)
+				{
+					Logger.Warn($"Failed to send message ({ex.Message}), will wait and try again in {waitTime.TotalSeconds} seconds");
+					Logger.Debug(ex);
+					Configuration.Reconnect();
+					await Impl.Recreate();
+				}
+				if (token.HasValue)
+					await Task.Delay(waitTime, token.Value);
+				else
+					await Task.Delay(waitTime);
+				token?.ThrowIfCancellationRequested();
+				waitTime = TimeSpan.FromMilliseconds(Math.Min(waitTime.TotalMilliseconds * 1.5, TimeSpan.FromMinutes(1).TotalMilliseconds));
+			}
+			foreach (var message in messages)
+				OnMessageSent(message, ApolloQueue.Registrations);
 		}
 	}
 }

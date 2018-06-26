@@ -93,7 +93,7 @@ namespace Apollo.ConsoleClient
 			                      $"Environment variable '{TritonConstants.ConnectionKey}' is not configured");
 		    var configuration = new ServiceBusConfiguration
 		    (
-			    new ServiceBusConnectionStringBuilder(credentials) { TransportType = TransportType.AmqpWebSockets},
+			    new ServiceBusConnectionStringBuilder(credentials) { TransportType = TransportType.Amqp},
 			    Guid.NewGuid().ToString()
 		    );
 		    var implementations = new TritonServiceBusImplementations(configuration)

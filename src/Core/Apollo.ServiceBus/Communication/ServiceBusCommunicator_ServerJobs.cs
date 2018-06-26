@@ -64,9 +64,9 @@ namespace Apollo.ServiceBus.Communication
 			}
 		}
 
-		public async Task SendToServerAsync(IMessage message) => await SendToServerAsync(new[] { message });
-
-		public async Task SendToServerAsync(params IMessage[] messages)
+		public Task SendToServerAsync(IMessage message, CancellationToken? token = null) => SendToServerAsync(token, message);
+		public Task SendToServerAsync(params IMessage[] messages) => SendToServerAsync(null, messages);
+		public async Task SendToServerAsync(CancellationToken? token, params IMessage[] messages)
 		{
 			if (!messages.Any())
 				throw new InvalidOperationException("Tried to send an empty array of messages to the server");

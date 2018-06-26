@@ -20,13 +20,20 @@ namespace Apollo.Common.Abstractions
 		IMessageFactory MessageFactory { get; }
 		void RemoveListenersForPlugin(TritonPluginBase plugin);
 
-		Task SendToClientAsync(IMessage message);
+		Task SendToClientAsync(IMessage message, CancellationToken? token = null);
+		Task SendToClientAsync(CancellationToken? token, params IMessage[] messages);
 		Task SendToClientAsync(params IMessage[] messages);
-		Task SendToServerAsync(IMessage message);
+
+		Task SendToServerAsync(IMessage message, CancellationToken? token = null);
+		Task SendToServerAsync(CancellationToken? token, params IMessage[] messages);
 		Task SendToServerAsync(params IMessage[] messages);
-		Task SendRegistrationMessageAsync(IMessage message);
+
+		Task SendRegistrationMessageAsync(IMessage message, CancellationToken? token = null);
+		Task SendRegistrationMessageAsync(CancellationToken? token, params IMessage[] messages);
 		Task SendRegistrationMessageAsync(params IMessage[] messages);
-		Task SendToAliasAsync(string alias, IMessage message);
+
+		Task SendToAliasAsync(string alias, IMessage message, CancellationToken? token = null);
+		Task SendToAliasAsync(string alias, CancellationToken? token, params IMessage[] messages);
 		Task SendToAliasAsync(string alias, params IMessage[] messages);
 
 		bool ListenForClientSessionMessages { get; }

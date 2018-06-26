@@ -90,7 +90,7 @@ namespace Apollo.ServiceBus.Communication
 
 		private async Task ReaquireClientSessionLock()
 		{
-			var waitTime = TimeSpan.FromMilliseconds(700);
+			var waitTime = TimeSpan.FromSeconds(0.5);
 			while (true)
 			{
 				try
@@ -106,38 +106,52 @@ namespace Apollo.ServiceBus.Communication
 
 					try
 					{
-						_activeClientSession =
-							await ClientSessionListener.Value.AcceptMessageSessionAsync(State[TritonConstants.RegisteredAsKey].ToString(),
-								TimeSpan.FromMinutes(30));
+						_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[TritonConstants.RegisteredAsKey].ToString(),TimeSpan.FromMinutes(30));
 						Logger.Info("Successfully created a new session lock");
 
 						break;
 					}
 					catch (ServiceBusCommunicationException ex)
 					{
-						Logger.Warn($"Failed to get session lock ({ex.Message}), will wait and try again in {waitTime.TotalSeconds} seconds");
+						Logger.Info("Connection to service bus lost, waiting for it to re-establish");
+						while (true)
+						{
+							try
+							{
+								var entry = await Dns.GetHostEntryAsync(Configuration.ConnectionStringBuilder.Endpoint.Replace("sb://", string.Empty));
+								if (entry != null)
+								{
+									Logger.Info($"Managed to resolve service bus endpoint to {entry.HostName}, will now retry");
+									break;
+								}
+							}
+							catch
+							{
+								// Suppress
+							}
+							await Task.Delay(300, _clientSessionListenCancellationToken.Token);
+						}
+						Configuration.Reconnect();
+						await Impl.Recreate();
+						continue;
 					}
 					catch (Exception recreateException)
 					{
-						Logger.Warn(
-							$"Encountered error while creating new session lock, will wait and try again in {waitTime.TotalSeconds} seconds");
+						Logger.Warn($"Encountered error while creating new session lock, will wait and try again in {waitTime.TotalSeconds} seconds");
 						Logger.Debug(recreateException);
-						Configuration.Reconnect();
-						await Impl.Recreate();
 					}
 
 					await Task.Delay(waitTime, _clientSessionListenCancellationToken.Token);
 					if (_clientSessionListenCancellationToken.Token.IsCancellationRequested)
 						break;
-					waitTime = TimeSpan.FromMilliseconds(Math.Min(waitTime.TotalMilliseconds * 1.5,
-						TimeSpan.FromMinutes(1).TotalMilliseconds));
+					waitTime = TimeSpan.FromMilliseconds(Math.Min(waitTime.TotalMilliseconds * 1.5, TimeSpan.FromMinutes(1).TotalMilliseconds));
 				}
 			}
 		}
 
-		public async Task SendToClientAsync(IMessage message) => await SendToClientAsync(new[] { message });
-
-		public async Task SendToClientAsync(params IMessage[] messages)
+		public Task SendToClientAsync(IMessage message, CancellationToken? token = null) => SendToClientAsync(token, message);
+		public Task SendToClientAsync(params IMessage[] messages) => SendToClientAsync(null, messages);
+		public async Task SendToClientAsync(CancellationToken? token, params IMessage[] messages)
 		{
 			if (!messages.Any())
 				throw new InvalidOperationException("Tried to send an empty array of messages to a client");
