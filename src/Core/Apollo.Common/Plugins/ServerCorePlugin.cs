@@ -30,7 +30,7 @@ namespace Apollo.Common.Plugins
 
 	    private void ForwardAliasMessage(IMessage message, ref MessageReceivedEventArgs e)
 	    {
-		    var targetAlias = message.GetStringProperty(TritonConstants.TargetAliasKey);
+		    var targetAlias = message.GetStringProperty(ApolloConstants.TargetAliasKey);
 		    var owner = _storage.GetAliasOwner(targetAlias);
 		    if (owner == null)
 		    {
@@ -47,7 +47,7 @@ namespace Apollo.Common.Plugins
 
 	    private void OnRegistrationReceived(IMessage m, ref MessageReceivedEventArgs e)
 	    {
-		    if (m.Label != TritonConstants.RegistrationKey) 
+		    if (m.Label != ApolloConstants.RegistrationKey) 
 				return;
 		    Logger.Info($"Received client message {m.Identifier} labelled {m.Label}");
 		    e.Status = MessageStatus.Complete;

@@ -18,7 +18,7 @@ namespace Apollo.Common.Abstractions
 		void SignalPluginEvent(string eventName, object state = null);
 
 		IMessageFactory MessageFactory { get; }
-		void RemoveListenersForPlugin(TritonPluginBase plugin);
+		void RemoveListenersForPlugin(ApolloPluginBase plugin);
 
 		Task SendToClientAsync(IMessage message, CancellationToken? token = null);
 		Task SendToClientAsync(CancellationToken? token, params IMessage[] messages);

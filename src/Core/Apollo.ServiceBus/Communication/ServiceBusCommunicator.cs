@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -10,6 +12,7 @@ using Apollo.ServiceBus.Infrastructure;
 using log4net;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
+using System.Reactive;
 
 namespace Apollo.ServiceBus.Communication
 {
@@ -28,7 +31,8 @@ namespace Apollo.ServiceBus.Communication
 			public DateTime ExpiryTimeUtc { get; set; }
 		}
 
-		private static readonly ILog ClassLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{TritonConstants.LoggerInternalsPrefix}.{MethodBase.GetCurrentMethod().DeclaringType.Name}");
+		private static readonly ILog ClassLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{ApolloConstants.LoggerInternalsPrefix}.{MethodBase.GetCurrentMethod().DeclaringType.Name}");
+		private static readonly ILog TraceLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{ApolloConstants.LoggerInternalsPrefix}.Tracing");
 		protected ILog Logger { get; private set; }
 		protected ServiceBusConfiguration Configuration { get; }
 
@@ -42,7 +46,7 @@ namespace Apollo.ServiceBus.Communication
 		protected Lazy<IMessageReceiver> AliasQueueListener => Impl.AliasQueueListener;
 		protected Lazy<IMessageSender> AliasQueueSender => Impl.AliasQueueSender;
 
-		private static bool RemoveListenersForPlugin(TritonPluginBase plugin, ref OnMessageReceivedDelegate eventHandlers)
+		private static bool RemoveListenersForPlugin(ApolloPluginBase plugin, ref OnMessageReceivedDelegate eventHandlers)
 		{
 			var handlers = eventHandlers.GetInvocationList().Where(h => h.Target == plugin);
 			// ReSharper disable once LoopCanBeConvertedToQuery
@@ -100,10 +104,31 @@ namespace Apollo.ServiceBus.Communication
 			SetLogger();
 
 			Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-			State[TritonConstants.RegisteredAsKey] = configuration.Identifier;
+			State[ApolloConstants.RegisteredAsKey] = configuration.Identifier;
 			MessageFactory = new ServiceBusMessageFactory(ServiceBusConstants.DefaultRegisteredClientsQueue, configuration.Identifier);
 			Impl = serviceBusImplementations ?? new DefaultServiceBusImplementations(configuration);
+			DiagnosticListener.AllListeners.Subscribe(delegate (DiagnosticListener listener)
+			{
+				// subscribe to the Service Bus DiagnosticSource
+				if (listener.Name == "Microsoft.Azure.ServiceBus")
+				{
+					// receive event from Service Bus DiagnosticSource
+					listener.Subscribe(delegate (KeyValuePair<string, object> evnt)
+					{
+						// Log operation details once it's done
+						if (!evnt.Key.EndsWith("Stop")) 
+							return;
+						var currentActivity = Activity.Current;
+						TraceLogger.Debug($"{currentActivity.OperationName} Duration: {currentActivity.Duration}\n\t{string.Join("\n\t", currentActivity.Tags)}");
+						
+					});
+				}
+			});
 			Logger.Info("Connecting to service bus with the following settings:");
+			Logger.Info($"Endpoint: {Configuration.ConnectionStringBuilder.Endpoint}");
+			Logger.Info($"Transport: {Configuration.ConnectionStringBuilder.TransportType}");
+			Logger.Info($"Using SAS Key: {Configuration.ConnectionStringBuilder.SasKeyName}");
+			Logger.Info($"To Entity: {Configuration.ConnectionStringBuilder.EntityPath}");
 		}
 
 		public T GetState<T>(string key)
@@ -118,7 +143,7 @@ namespace Apollo.ServiceBus.Communication
 			PluginEvent?.Invoke(eventName, state);
 		}
 
-		public void RemoveListenersForPlugin(TritonPluginBase plugin)
+		public void RemoveListenersForPlugin(ApolloPluginBase plugin)
 		{
 			if (RemoveListenersForPlugin(plugin, ref _registrationMessageReceivedDelegate))
 				ListenForRegistrations = false;
@@ -247,8 +272,8 @@ namespace Apollo.ServiceBus.Communication
 			return Task.Run(() =>
 			{
 				var calculatedTimeout = (timeout ?? message.TimeToLive);
-				if (calculatedTimeout > TritonConstants.MaximumReplyWaitTime)
-					calculatedTimeout = TritonConstants.MaximumReplyWaitTime;
+				if (calculatedTimeout > ApolloConstants.MaximumReplyWaitTime)
+					calculatedTimeout = ApolloConstants.MaximumReplyWaitTime;
 				calculatedTimeout = calculatedTimeout == TimeSpan.Zero
 					? TimeSpan.FromSeconds(10)
 					: calculatedTimeout;

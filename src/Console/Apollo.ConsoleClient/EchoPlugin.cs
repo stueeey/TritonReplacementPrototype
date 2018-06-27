@@ -5,7 +5,7 @@ using Apollo.Common.Infrastructure;
 
 namespace Apollo.ConsoleClient
 {
-	public class EchoPlugin : TritonPluginBase
+	public class EchoPlugin : ApolloPluginBase
 	{
 		private const string EchoKey = "Echo";
 

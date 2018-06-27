@@ -1,0 +1,33 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "databaseAccounts_apollodb_production_name": {
+            "value": null
+        },
+        "databaseAccounts_apollodb_production_name_1": {
+            "value": null
+        },
+        "namespaces_ApolloServiceBus_Production_name": {
+            "value": null
+        },
+        "queues_clientaliases_name": {
+            "value": null
+        },
+        "queues_registrations_name": {
+            "value": null
+        },
+        "queues_clientsessions_name": {
+            "value": null
+        },
+        "queues_serverrequests_name": {
+            "value": null
+        },
+        "AuthorizationRules_TestingServerKey_name": {
+            "value": null
+        },
+        "AuthorizationRules_RootManageSharedAccessKey_name": {
+            "value": null
+        }
+    }
+}

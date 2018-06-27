@@ -6,7 +6,7 @@ using Apollo.Common.Infrastructure;
 
 namespace Apollo.Common.Plugins
 {
-    public abstract class CorePlugin : TritonPluginBase
+    public abstract class CorePlugin : ApolloPluginBase
     {
 	    protected void HandlePing(IMessage message, ref MessageReceivedEventArgs e)
 	    {
@@ -14,7 +14,7 @@ namespace Apollo.Common.Plugins
 			    return;
 		    var response = MessageFactory.CreateReply(message);
 		    response.Label = "Ping Response";
-		    response[nameof(PingStats.ServedBy)] = Communicator.GetState<string>(TritonConstants.RegisteredAsKey);
+		    response[nameof(PingStats.ServedBy)] = Communicator.GetState<string>(ApolloConstants.RegisteredAsKey);
 		    response[nameof(PingStats.TimeRequestEnqueuedUtc)] = message.EnqueuedTimeUtc;
 		    Communicator.SendToClientAsync(response);
 	    }
@@ -50,7 +50,7 @@ namespace Apollo.Common.Plugins
 			    var response = await Communicator.WaitForReplyTo(message, cancellationToken);
 			    switch (response?.Label)
 			    {
-				    case TritonConstants.NegativeAcknowledgement:
+				    case ApolloConstants.NegativeAcknowledgement:
 					    retVal.Result = PingStats.PingResult.AddresseeNotFound;
 					    break;
 				    case "Ping Response":
@@ -58,6 +58,7 @@ namespace Apollo.Common.Plugins
 					    retVal.TimeResponseEnqueuedUtc = response.EnqueuedTimeUtc;
 					    retVal.TimeRequestEnqueuedUtc = (DateTime) (response[nameof(PingStats.TimeRequestEnqueuedUtc)] ?? DateTime.MinValue);
 					    retVal.ServedBy = response.GetStringProperty(nameof(PingStats.ServedBy));
+
 					    break;
 				    default:
 						retVal.Result = PingStats.PingResult.Timeout;

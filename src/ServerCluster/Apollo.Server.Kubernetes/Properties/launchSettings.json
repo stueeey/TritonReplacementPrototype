@@ -1,0 +1,35 @@
+{
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:38518/",
+      "sslPort": 0
+    }
+  },
+  "profiles": {
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "launchUrl": "api/values",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "Apollo.Server.Kubernetes": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "api/ServerInstance",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:38519/"
+    },
+    "AKS": {
+      "commandName": "AzureDevSpaces",
+      "resourceGroup": "Apollo-Production",
+      "aksName": "ApolloAKS-Production",
+      "subscriptionId": "4aa94c3b-dfc7-4efe-864f-363961578773"
+    }
+  }
+}

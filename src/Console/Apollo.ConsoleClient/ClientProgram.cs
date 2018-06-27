@@ -29,12 +29,12 @@ namespace Apollo.ConsoleClient
 	        var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
 	        XmlConfigurator.Configure(logRepository, new FileInfo("Logging.config"));
 	        var container = SetupIoc();
-	        var client = container.Get<ITritonClient>();
+	        var client = container.Get<IApolloClient>();
 	        Console.Title = $"Client Console [{client.Identifier}]";
 	        RunClient(client).Wait();
         }
 
-	    private static async Task RunClient(ITritonClient client)
+	    private static async Task RunClient(IApolloClient client)
 	    {
 		    var echoPlugin = client.GetPlugin<EchoPlugin>();
 		    await client.RegisterAsync(new Dictionary<string, string>
@@ -88,17 +88,18 @@ namespace Apollo.ConsoleClient
 
 	    private static StandardKernel SetupIoc()
 	    {
-		    var credentials = Environment.GetEnvironmentVariable(TritonConstants.ConnectionKey) ??
-		                      throw new ArgumentException(
-			                      $"Environment variable '{TritonConstants.ConnectionKey}' is not configured");
+		    var connectionKey = Environment.GetEnvironmentVariable(ApolloConstants.ConnectionKey, EnvironmentVariableTarget.Process) ?? 
+		                        Environment.GetEnvironmentVariable(ApolloConstants.ConnectionKey, EnvironmentVariableTarget.User) ??
+		                        Environment.GetEnvironmentVariable(ApolloConstants.ConnectionKey, EnvironmentVariableTarget.Machine) ??
+								throw new ArgumentException($"Environment variable '{ApolloConstants.ConnectionKey}' is not configured");
 		    var configuration = new ServiceBusConfiguration
 		    (
-			    new ServiceBusConnectionStringBuilder(credentials) { TransportType = TransportType.Amqp},
+			    new ServiceBusConnectionStringBuilder(connectionKey) { TransportType = TransportType.Amqp},
 			    Guid.NewGuid().ToString()
 		    );
-		    var implementations = new TritonServiceBusImplementations(configuration)
+		    var implementations = new ApolloServiceBusImplementations(configuration)
 		    {
-			    ClientPlugins = new TritonPluginBase[]
+			    ClientPlugins = new ApolloPluginBase[]
 			    {
 				    new EchoPlugin()
 			    }

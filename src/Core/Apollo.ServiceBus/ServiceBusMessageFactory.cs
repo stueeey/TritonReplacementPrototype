@@ -46,14 +46,14 @@ namespace Apollo.ServiceBus
 	    public IMessage CreateAcknowledgment(IMessage receivedMessage)
 	    {
 		    var response = CreateReply(receivedMessage);
-		    response.Label = TritonConstants.PositiveAcknowledgement;
+		    response.Label = ApolloConstants.PositiveAcknowledgement;
 		    return response;
 	    }
 
 	    public IMessage CreateNegativeAcknowledgment(IMessage receivedMessage, string reason)
 	    {
 		    var response = CreateReply(receivedMessage);
-		    response.Label = TritonConstants.NegativeAcknowledgement;
+		    response.Label = ApolloConstants.NegativeAcknowledgement;
 			response["Reason"] = reason;
 		    return response;
 	    }

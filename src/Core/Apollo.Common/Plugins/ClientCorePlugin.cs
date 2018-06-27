@@ -24,7 +24,7 @@ namespace Apollo.Common.Plugins
 
 		public async Task<string> RegisterAsync(IDictionary<string, string> metadata = null, TimeSpan? timeOut = null)
 	    {
-		    var registrationMessage = Communicator.MessageFactory.CreateNewMessage(TritonConstants.RegistrationKey);
+		    var registrationMessage = Communicator.MessageFactory.CreateNewMessage(ApolloConstants.RegistrationKey);
 		    if (metadata != null)
 		    {
 			    foreach (var entry in metadata)
@@ -35,7 +35,7 @@ namespace Apollo.Common.Plugins
 				registrationMessage.TimeToLive = timeOut.Value;
 		    await Communicator.SendRegistrationMessageAsync(registrationMessage);
 		    var response = await Communicator.WaitForReplyTo(registrationMessage);
-		    if (response == null || response.Label != TritonConstants.PositiveAcknowledgement)
+		    if (response == null || response.Label != ApolloConstants.PositiveAcknowledgement)
 			    return string.Empty;
 		    Logger.Info($"Received confirmation of registration as {response.TargetSession}");
 			Communicator.SignalPluginEvent(RegisteredEventName, response.TargetSession);
@@ -51,7 +51,7 @@ namespace Apollo.Common.Plugins
 		    message.TimeToLive = TimeSpan.FromSeconds(30);
 		    await Communicator.SendRegistrationMessageAsync(message);
 		    var response = await Communicator.WaitForReplyTo(message);
-		    if (response.Label != TritonConstants.PositiveAcknowledgement || !response.Properties.ContainsKey(AliasTokenKey))
+		    if (response.Label != ApolloConstants.PositiveAcknowledgement || !response.Properties.ContainsKey(AliasTokenKey))
 		    {
 			    Logger.Warn($"Failed to get ownership of {alias} ({response["Reason"] ?? "Unknown"})");
 			    return Guid.Empty;

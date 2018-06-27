@@ -41,7 +41,7 @@ namespace Apollo.ServiceBus.Communication
 
 		private void OnAliasMessageReceived(IMessage m, ref MessageReceivedEventArgs e)
 		{
-			Logger.Debug($"Received a new alias message with label {m.Label} for {m[TritonConstants.TargetAliasKey] ?? "<Unknown>"}");
+			Logger.Debug($"Received a new alias message with label {m.Label} for {m[ApolloConstants.TargetAliasKey] ?? "<Unknown>"}");
 			CheckIfAnyoneIsWaitingForMessage(m, e);
 		}
 
@@ -75,7 +75,7 @@ namespace Apollo.ServiceBus.Communication
 			{
 				foreach (var message in messages)
 				{
-					message.Properties[TritonConstants.TargetAliasKey] = alias;
+					message.Properties[ApolloConstants.TargetAliasKey] = alias;
 					OnMessageSent(message, ApolloQueue.Aliases);
 				}
 				await AliasQueueSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());

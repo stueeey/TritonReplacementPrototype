@@ -1,8 +1,0 @@
-version: '3.4'
-
-services:
-  soei.apollo.serverworker:
-    image: ${DOCKER_REGISTRY}apolloserverworker
-    build:
-      context: .
-      dockerfile: src\ServerCluster\Apollo.ServerWorker\Dockerfile

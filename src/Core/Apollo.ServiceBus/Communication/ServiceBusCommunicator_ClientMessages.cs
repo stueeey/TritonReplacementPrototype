@@ -50,7 +50,7 @@ namespace Apollo.ServiceBus.Communication
 
 		private async Task StartListeningForClientMessages()
 		{
-			_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[TritonConstants.RegisteredAsKey].ToString(), TimeSpan.FromMinutes(30));
+			_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[ApolloConstants.RegisteredAsKey].ToString(), TimeSpan.FromMinutes(30));
 			while (_activeClientSession != null && _clientSessionListenCancellationToken != null && !_clientSessionListenCancellationToken.Token.IsCancellationRequested)
 			{
 				try
@@ -106,12 +106,12 @@ namespace Apollo.ServiceBus.Communication
 
 					try
 					{
-						_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[TritonConstants.RegisteredAsKey].ToString(),TimeSpan.FromMinutes(30));
+						_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[ApolloConstants.RegisteredAsKey].ToString(),TimeSpan.FromMinutes(30));
 						Logger.Info("Successfully created a new session lock");
 
 						break;
 					}
-					catch (ServiceBusCommunicationException ex)
+					catch (ServiceBusCommunicationException)
 					{
 						Logger.Info("Connection to service bus lost, waiting for it to re-establish");
 						while (true)

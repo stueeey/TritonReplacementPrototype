@@ -21,21 +21,25 @@ namespace Apollo.ConsoleServer
 	        XmlConfigurator.Configure(logRepository, new FileInfo("Logging.config"));
 	        var container = SetupIoc();
 	        container.Bind<IRegistrationStorage>().To<InMemoryRegistrationStorage>().InSingletonScope();
-	        var server = container.Get<ITritonServer>();
+	        var server = container.Get<IApolloServer>();
 	        Console.Title = $"Server Console [{server.Identifier}]";
 	        Console.ReadKey();
         }
 
 	    private static StandardKernel SetupIoc()
 	    {
+		    var connectionKey = Environment.GetEnvironmentVariable(ApolloConstants.ConnectionKey, EnvironmentVariableTarget.Process) ?? 
+		                        Environment.GetEnvironmentVariable(ApolloConstants.ConnectionKey, EnvironmentVariableTarget.User) ??
+		                        Environment.GetEnvironmentVariable(ApolloConstants.ConnectionKey, EnvironmentVariableTarget.Machine) ??
+		                        throw new ArgumentException($"Environment variable '{ApolloConstants.ConnectionKey}' is not configured");
 		    var configuration = new ServiceBusConfiguration
 		    (
-			    new ServiceBusConnectionStringBuilder(Environment.GetEnvironmentVariable(TritonConstants.ConnectionKey) ?? throw new ArgumentException($"Environment variable '{TritonConstants.ConnectionKey}' is not configured")),
+			    new ServiceBusConnectionStringBuilder(connectionKey),
 			    $"Server {Guid.NewGuid()}"
 		    );
-		    var implementations = new TritonServiceBusImplementations(configuration)
+		    var implementations = new ApolloServiceBusImplementations(configuration)
 		    {
-			    ServerPlugins = new TritonPluginBase[]
+			    ServerPlugins = new ApolloPluginBase[]
 			    {
 				    new EchoListenerPlugin()
 			    }
