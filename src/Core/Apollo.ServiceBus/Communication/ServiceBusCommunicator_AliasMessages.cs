@@ -78,7 +78,15 @@ namespace Apollo.ServiceBus.Communication
 					message.Properties[ApolloConstants.TargetAliasKey] = alias;
 					OnMessageSent(message, ApolloQueue.Aliases);
 				}
-				await AliasQueueSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
+				try
+				{
+					await AliasQueueSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
+				}
+				catch (Exception ex)
+				{
+					Logger.Warn(ex);
+					throw;
+				}
 			}
 			else
 				throw new InvalidOperationException($"{GetType().Name} cannot send messages which do not inherit from {nameof(ServiceBusMessage)}");

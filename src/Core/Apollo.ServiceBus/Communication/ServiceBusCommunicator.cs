@@ -129,6 +129,7 @@ namespace Apollo.ServiceBus.Communication
 			Logger.Info($"Transport: {Configuration.ConnectionStringBuilder.TransportType}");
 			Logger.Info($"Using SAS Key: {Configuration.ConnectionStringBuilder.SasKeyName}");
 			Logger.Info($"To Entity: {Configuration.ConnectionStringBuilder.EntityPath}");
+			Logger.Info($"As: {Configuration.Identifier}");
 		}
 
 		public T GetState<T>(string key)

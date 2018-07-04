@@ -1,0 +1,1 @@
+docker run -e "APOLLO_SERVER_ID=%computername%" -e "ServiceBusConnectionKey=%ServiceBusConnectionKey%" apollo

@@ -73,27 +73,14 @@ namespace Apollo.ServiceBus.Communication
 				throw new InvalidOperationException("Tried to send an empty array of registration messages");
 			if (!messages.All(m => m is ServiceBusMessage))
 				throw new InvalidOperationException($"{GetType().Name} cannot send messages which do not inherit from {nameof(ServiceBusMessage)}");
-			var waitTime = TimeSpan.FromSeconds(0.5);
-			while (true)
+			try
 			{
-				try
-				{
-					await RegistrationSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
-					break;
-				}
-				catch (Exception ex)
-				{
-					Logger.Warn($"Failed to send message ({ex.Message}), will wait and try again in {waitTime.TotalSeconds} seconds");
-					Logger.Debug(ex);
-					Configuration.Reconnect();
-					await Impl.Recreate();
-				}
-				if (token.HasValue)
-					await Task.Delay(waitTime, token.Value);
-				else
-					await Task.Delay(waitTime);
-				token?.ThrowIfCancellationRequested();
-				waitTime = TimeSpan.FromMilliseconds(Math.Min(waitTime.TotalMilliseconds * 1.5, TimeSpan.FromMinutes(1).TotalMilliseconds));
+				await RegistrationSender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
+			}
+			catch (Exception ex)
+			{
+				Logger.Warn(ex);
+				throw;
 			}
 			foreach (var message in messages)
 				OnMessageSent(message, ApolloQueue.Registrations);

@@ -166,6 +166,7 @@ namespace Apollo.ServiceBus.Communication
 				catch (Exception ex)
 				{
 					Logger.Warn(ex);
+					throw;
 				}
 			}
 			else

@@ -37,9 +37,15 @@ namespace Apollo.Server.Kubernetes
 								Environment.GetEnvironmentVariable(ApolloConstants.ConnectionKey, EnvironmentVariableTarget.User) ??
 								Environment.GetEnvironmentVariable(ApolloConstants.ConnectionKey, EnvironmentVariableTarget.Machine) ??
 								throw new ArgumentException($"Environment variable '{ApolloConstants.ConnectionKey}' is not configured");
+
+			var serverIdentifier = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" 
+				? $"{Environment.MachineName} {Environment.GetEnvironmentVariable("APOLLO_SERVER_ID")}" // Machine name will be the ID of the container if running in docker
+				: (Environment.GetEnvironmentVariable("APOLLO_SERVER_ID") ?? $"Server {Guid.NewGuid()}");
+
 			var configuration = new ServiceBusConfiguration
 			(
-				new ServiceBusConnectionStringBuilder(connectionKey), $"Server {Guid.NewGuid()}"
+				new ServiceBusConnectionStringBuilder(connectionKey), 
+				serverIdentifier
 			);
 			var implementations = new ApolloServiceBusImplementations(configuration)
 			{
