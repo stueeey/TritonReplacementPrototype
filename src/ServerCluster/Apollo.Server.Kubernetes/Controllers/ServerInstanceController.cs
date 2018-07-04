@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
+using Apollo.Common.Plugins;
 using Microsoft.AspNetCore.Mvc;
 using Ninject;
 
@@ -46,5 +48,12 @@ namespace Apollo.ServerWorker.Controllers
 	        };
 	        return retVal;
         }
-    }
+
+		[Route("Ping")]
+		[HttpGet()]
+		public async Task<string> Ping()
+		{
+			return (await _server.GetPlugin<ServerCorePlugin>().PingServer()).ToString(true);
+		}
+	}
 }

@@ -6,7 +6,8 @@ using Apollo.Common.Infrastructure;
 
 namespace Apollo.Common.Plugins
 {
-    public class ServerCorePlugin : CorePlugin
+
+	public class ServerCorePlugin : CorePlugin
     {
 		private const string DesiredAliasKey = "Desired Alias";
 		private const string AliasTokenKey = "Alias Token";
@@ -26,6 +27,7 @@ namespace Apollo.Common.Plugins
 			Communicator.RegistrationReceived += AliasOwnershipClaimReceived;
 			Communicator.AliasMessageReceived += ForwardAliasMessage;
 			Communicator.ServerJobReceived += HandlePing;
+			Communicator.ClientSessionMessageReceived += HandlePing;
 		}
 
 	    private void ForwardAliasMessage(IMessage message, ref MessageReceivedEventArgs e)
