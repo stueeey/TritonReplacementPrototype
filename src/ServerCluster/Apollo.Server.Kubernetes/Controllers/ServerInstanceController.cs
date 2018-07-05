@@ -38,10 +38,10 @@ namespace Apollo.ServerWorker.Controllers
 	        var retVal = new ServerStatus
 	        {
 		        Identifier = _server.Identifier,
-		        ListeningForServerRequests = _server.Communicator.ListenForServerJobs,
-		        ListeningForRegistrationRequests = _server.Communicator.ListenForRegistrations,
-		        ListeningForAliasMessages = _server.Communicator.ListenForAliasMessages,
-		        ListeningForClientSessionMessages = _server.Communicator.ListenForClientSessionMessages,
+		        ListeningForServerRequests = _server.Communicator.ListeningForServerJobs,
+		        ListeningForRegistrationRequests = _server.Communicator.ListeningForRegistrations,
+		        ListeningForAliasMessages = _server.Communicator.ListeningForAliasMessages,
+		        ListeningForClientSessionMessages = _server.Communicator.ListeningForClientSessionMessages,
 		        State = _server.Communicator.State.OrderBy(e => e.Key).ToArray(),
 		        Uptime = DateTime.Now - Process.GetCurrentProcess().StartTime
 		        

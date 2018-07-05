@@ -8,12 +8,13 @@ namespace Apollo.Common.Infrastructure
 
 	public class MessageHandler
     {
-		public MessageHandler(MessageReceivedDelegate onMessageReceived)
+		public ApolloPluginBase Plugin { get; }
+		public MessageHandler(ApolloPluginBase Plugin, MessageReceivedDelegate onMessageReceived)
 		{
 			OnMessageReceived = onMessageReceived ?? throw new ArgumentNullException(nameof(onMessageReceived));
 		}
 
-		public MessageHandler(MessageReceivedDelegate onMessageReceived, string messageLabel)
+		public MessageHandler(ApolloPluginBase Plugin, MessageReceivedDelegate onMessageReceived, string messageLabel)
 		{
 			OnMessageReceived = onMessageReceived ?? throw new ArgumentNullException(nameof(onMessageReceived));
 			MessageFilter = m => StringComparer.OrdinalIgnoreCase.Equals(m.Label.Trim(), messageLabel);

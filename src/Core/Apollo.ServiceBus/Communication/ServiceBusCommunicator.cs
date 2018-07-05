@@ -31,6 +31,8 @@ namespace Apollo.ServiceBus.Communication
 			public DateTime ExpiryTimeUtc { get; set; }
 		}
 
+		private IDictionary<ApolloQueue, ICollection<MessageHandler>> Handlers = new Dictionary<ApolloQueue, ICollection<MessageHandler>>();
+
 		private static readonly ILog ClassLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{ApolloConstants.LoggerInternalsPrefix}.{MethodBase.GetCurrentMethod().DeclaringType.Name}");
 		private static readonly ILog TraceLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{ApolloConstants.LoggerInternalsPrefix}.Tracing");
 		protected ILog Logger { get; private set; }
@@ -45,15 +47,6 @@ namespace Apollo.ServiceBus.Communication
 		protected Lazy<IMessageSender> ClientSessionSender => Impl.ClientSessionSender;
 		protected Lazy<IMessageReceiver> AliasQueueListener => Impl.AliasQueueListener;
 		protected Lazy<IMessageSender> AliasQueueSender => Impl.AliasQueueSender;
-
-		private static bool RemoveListenersForPlugin(ApolloPluginBase plugin, ref OnMessageReceivedDelegate eventHandlers)
-		{
-			var handlers = eventHandlers.GetInvocationList().Where(h => h.Target == plugin);
-			// ReSharper disable once LoopCanBeConvertedToQuery
-			foreach (var handler in handlers)
-				eventHandlers = (OnMessageReceivedDelegate) Delegate.Remove(eventHandlers, handler);
-			return !eventHandlers?.GetInvocationList().Any() ?? true;
-		}
 
 		protected ConcurrentDictionary<string, MessageWaitJob> ReplyWaitList { get; } = new ConcurrentDictionary<string, MessageWaitJob>();
 
@@ -130,6 +123,20 @@ namespace Apollo.ServiceBus.Communication
 			Logger.Info($"Using SAS Key: {Configuration.ConnectionStringBuilder.SasKeyName}");
 			Logger.Info($"To Entity: {Configuration.ConnectionStringBuilder.EntityPath}");
 			Logger.Info($"As: {Configuration.Identifier}");
+
+			var systemMessageHandler = new MessageHandler(null, OnMessageFirstReceived);
+			foreach (ApolloQueue queueType in Enum.GetValues(typeof(ApolloQueue)))
+				AddHandler(queueType, systemMessageHandler);
+		}
+
+		protected virtual MessageStatus OnMessageFirstReceived(IServiceCommunicator serviceCommunicator, IMessage message)
+		{
+			if (ReplyWaitList.TryGetValue(message.Identifier, out var waiter))
+			{
+				waiter.WaitHandle.Set();
+				return MessageStatus.Complete;
+			}
+			return MessageStatus.Unhandled;
 		}
 
 		public T GetState<T>(string key)
@@ -146,35 +153,32 @@ namespace Apollo.ServiceBus.Communication
 
 		public void RemoveListenersForPlugin(ApolloPluginBase plugin)
 		{
-			if (RemoveListenersForPlugin(plugin, ref _registrationMessageReceivedDelegate))
-				ListenForRegistrations = false;
-			if (RemoveListenersForPlugin(plugin, ref _aliasMessageReceivedDelegate))
-				ListenForAliasMessages = false;
-			if (RemoveListenersForPlugin(plugin, ref _clientSessionMessageReceivedDelegate))
-				ListenForClientSessionMessages = false;
-			if (RemoveListenersForPlugin(plugin, ref _serverJobsMessageReceivedDelegate))
-				ListenForServerJobs = false;
+			foreach (var queueType in Handlers)
+			{
+				foreach (var itemToRemove in queueType.Value.Where(h => h.Plugin == plugin).ToArray())
+					RemoveHandler(queueType.Key, itemToRemove);
+			}
 		}
 
-		public bool ListenForClientSessionMessages
+		public bool ListeningForClientSessionMessages
 		{
 			get => _listenForClientSessionMessages;
 			protected set => HandleListenForClientMessagesChanged(value);
 		}
 
-		public bool ListenForRegistrations
+		public bool ListeningForRegistrations
 		{
 			get => _listenForRegistrations;
 			protected set => HandleListenForRegistrationsChanged(value);
 		}
 
-		public bool ListenForServerJobs
+		public bool ListeningForServerJobs
 		{
 			get => _listenForServerJobs;
 			protected set => HandleListenForServerJobsChanged(value);
 		}
 
-		public bool ListenForAliasMessages
+		public bool ListeningForAliasMessages
 		{
 			get => _listenForAliasSessionMessages;
 			protected set => HandleListenForAliasMessagesChanged(value);
@@ -186,13 +190,13 @@ namespace Apollo.ServiceBus.Communication
 			add
 			{
 				_aliasMessageReceivedDelegate = (OnMessageReceivedDelegate)Delegate.Combine(_aliasMessageReceivedDelegate, value);
-				ListenForAliasMessages = true;
+				ListeningForAliasMessages = true;
 			}
 			remove
 			{
 				_aliasMessageReceivedDelegate = (OnMessageReceivedDelegate)Delegate.Remove(_aliasMessageReceivedDelegate, value);
 				if (!_aliasMessageReceivedDelegate?.GetInvocationList().Any() ?? false)
-					ListenForAliasMessages = false;
+					ListeningForAliasMessages = false;
 			}
 		}
 
@@ -228,13 +232,13 @@ namespace Apollo.ServiceBus.Communication
 			add
 			{
 				_clientSessionMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Combine(_clientSessionMessageReceivedDelegate, value);
-				ListenForClientSessionMessages = true;
+				ListeningForClientSessionMessages = true;
 			}
 			remove
 			{
 				_clientSessionMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Remove(_clientSessionMessageReceivedDelegate, value);
 				if (!_clientSessionMessageReceivedDelegate?.GetInvocationList().Any() ?? false)
-					ListenForClientSessionMessages = false;
+					ListeningForClientSessionMessages = false;
 			}
 		}
 
@@ -243,13 +247,13 @@ namespace Apollo.ServiceBus.Communication
 			add
 			{
 				_registrationMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Combine(_registrationMessageReceivedDelegate, value);
-				ListenForRegistrations = true;
+				ListeningForRegistrations = true;
 			}
 			remove
 			{
 				_registrationMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Remove(_registrationMessageReceivedDelegate, value);
 				if (!_registrationMessageReceivedDelegate?.GetInvocationList().Any() ?? false)
-					ListenForRegistrations = false;
+					ListeningForRegistrations = false;
 			}
 		}
 
@@ -258,13 +262,13 @@ namespace Apollo.ServiceBus.Communication
 			add
 			{
 				_serverJobsMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Combine(_serverJobsMessageReceivedDelegate, value);
-				ListenForServerJobs = true;
+				ListeningForServerJobs = true;
 			}
 			remove
 			{
 				_serverJobsMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Remove(_serverJobsMessageReceivedDelegate, value);
 				if (!_serverJobsMessageReceivedDelegate?.GetInvocationList().Any() ?? false)
-					ListenForServerJobs = false;
+					ListeningForServerJobs = false;
 			}
 		}
 
@@ -303,6 +307,33 @@ namespace Apollo.ServiceBus.Communication
 			
 		}
 
+		public void AddHandler(ApolloQueue queueType, MessageHandler handler)
+		{
+			if (handler == null)
+				throw new ArgumentNullException(nameof(handler));
+			lock (Handlers)
+			{
+				if (Handlers.ContainsKey(queueType))
+					Handlers[queueType].Add(handler);
+				else
+					Handlers.Add(queueType, new List<MessageHandler> { handler });
+			}
+		}
+
+		public void RemoveHandler(ApolloQueue queueType, MessageHandler handler)
+		{
+			if (handler == null)
+				throw new ArgumentNullException(nameof(handler));
+			lock (Handlers)
+			{
+				if (!Handlers.ContainsKey(queueType))
+					return;
+				Handlers[queueType].Remove(handler);
+				if (!Handlers[queueType].Any())
+					Handlers.Remove(queueType);
+			}
+		}
+
 		#endregion
 
 		#region IDisposable
@@ -312,9 +343,9 @@ namespace Apollo.ServiceBus.Communication
 			_clientSessionMessageReceivedDelegate = null;
 			_serverJobsMessageReceivedDelegate = null;
 			_registrationMessageReceivedDelegate = null;
-			ListenForClientSessionMessages = false;
-			ListenForRegistrations = false;
-			ListenForServerJobs = false;
+			ListeningForClientSessionMessages = false;
+			ListeningForRegistrations = false;
+			ListeningForServerJobs = false;
 			Configuration.Connection?.CloseAsync().Wait();
 		}
 

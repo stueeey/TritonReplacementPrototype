@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Infrastructure;
@@ -19,6 +20,8 @@ namespace Apollo.Common.Abstractions
 
 		IMessageFactory MessageFactory { get; }
 		void RemoveListenersForPlugin(ApolloPluginBase plugin);
+		void AddHandler(ApolloQueue queueType, MessageHandler handler);
+		void RemoveHandler(ApolloQueue queueType, MessageHandler handler);
 
 		Task SendToClientAsync(IMessage message, CancellationToken? token = null);
 		Task SendToClientAsync(CancellationToken? token, params IMessage[] messages);
@@ -36,10 +39,10 @@ namespace Apollo.Common.Abstractions
 		Task SendToAliasAsync(string alias, CancellationToken? token, params IMessage[] messages);
 		Task SendToAliasAsync(string alias, params IMessage[] messages);
 
-		bool ListenForClientSessionMessages { get; }
-		bool ListenForRegistrations { get; }
-		bool ListenForServerJobs { get; }
-		bool ListenForAliasMessages { get; }
+		bool ListeningForClientSessionMessages { get; }
+		bool ListeningForRegistrations { get; }
+		bool ListeningForServerJobs { get; }
+		bool ListeningForAliasMessages { get; }
 
 		event PluginEventDelegate PluginEvent;
 		event OnMessageReceivedDelegate ClientSessionMessageReceived;
