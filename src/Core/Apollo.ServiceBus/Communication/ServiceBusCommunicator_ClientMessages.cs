@@ -48,9 +48,10 @@ namespace Apollo.ServiceBus.Communication
 			{
 				try
 				{
-					var message = await _activeClientSession.ReceiveAsync(TimeSpan.FromSeconds(60));
-					if (message != null)
-						await InvokeMessageHandlers(_activeClientSession, ApolloQueue.ClientSessions, new ServiceBusMessage(message), cancelToken);
+					var messages = await _activeClientSession.ReceiveAsync(5, TimeSpan.FromSeconds(5));
+					if (messages != null)
+						foreach (var message in messages)
+							await InvokeMessageHandlers(_activeClientSession, ApolloQueue.ClientSessions, new ServiceBusMessage(message), cancelToken);
 				}
 				catch (SessionLockLostException)
 				{
