@@ -3,8 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
-using Apollo.Common.Infrastructure;
-using Microsoft.Azure.ServiceBus;
 
 namespace Apollo.ServiceBus.Communication
 {
@@ -14,12 +12,6 @@ namespace Apollo.ServiceBus.Communication
 		private CancellationTokenSource _registrationsListenCancellationToken;
 		private bool _listenForRegistrations;
 		private readonly object _listenForRegistrationsToken = new object();
-
-		private void OnRegistrationReceived(IMessage m, ref MessageReceivedEventArgs e)
-		{
-			Logger.Debug($"Received a new registration message with a callback session of {m.ReplyToSession}");
-			CheckIfAnyoneIsWaitingForMessage(m, e);
-		}
 
 		private void HandleListenForRegistrationsChanged(bool enabled)
 		{

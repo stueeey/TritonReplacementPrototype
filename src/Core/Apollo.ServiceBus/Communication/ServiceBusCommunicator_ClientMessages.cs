@@ -41,12 +41,6 @@ namespace Apollo.ServiceBus.Communication
 			}
 		}
 
-		private void OnClientSessionMessageReceived(IMessage m, ref MessageReceivedEventArgs e)
-		{
-			Logger.Debug($"Received a new client session message with label {m.Label} and ID {m.Identifier}");
-			CheckIfAnyoneIsWaitingForMessage(m, e);
-		}
-
 		private async Task StartListeningForClientMessages(CancellationToken cancelToken)
 		{
 			_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[ApolloConstants.RegisteredAsKey].ToString(), TimeSpan.FromMinutes(30));

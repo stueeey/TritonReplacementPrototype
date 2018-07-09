@@ -9,7 +9,12 @@ namespace Apollo.Common.Infrastructure
 	public delegate void MessageReceivedErrorDelegate(IMessage message, Exception error);
 
 	public class MessageHandler
-    {
+	{
+		private MessageReceivedDelegate _onMessageReceived;
+		private Predicate<IMessage> _messageFilter;
+
+		public static MessageHandler CreateFakeHandler() => new MessageHandler(null, (q, m, c) => MessageStatus.Unhandled) { MessageFilter = (m) => false };
+
 		public ApolloPluginBase Plugin { get; }
 		public MessageHandler(ApolloPluginBase Plugin, MessageReceivedDelegate onMessageReceived, MessageReceivedErrorDelegate onError = null)
 		{
@@ -20,7 +25,11 @@ namespace Apollo.Common.Infrastructure
 		{
 			OnMessageReceived = onMessageReceived ?? throw new ArgumentNullException(nameof(onMessageReceived));
 			MessageFilter = m => StringComparer.OrdinalIgnoreCase.Equals(m.Label.Trim(), messageLabel);
+			FilterName = $"Label == {messageLabel}";
 		}
+
+		public string FilterName { get; set; }
+		public string ActionName { get; set; }
 
 		public bool PassesFilter(IMessage message)
 		{
@@ -33,7 +42,7 @@ namespace Apollo.Common.Infrastructure
 				var logger = Plugin?.GetLogger();
 				logger?.Error($"Encountered an error while checking if a message with label {message?.Label ?? "<Blank>"} ({ex.Message})");
 				logger?.Debug(ex);
-				return false; 
+				return false;
 			}
 		}
 
@@ -55,8 +64,29 @@ namespace Apollo.Common.Infrastructure
 			}
 		}
 
-		public MessageReceivedDelegate OnMessageReceived { get; set; }
-		public Predicate<IMessage> MessageFilter { get; set; }
+		public MessageReceivedDelegate OnMessageReceived 
+		{ 
+			get => _onMessageReceived; 
+			set
+			{ 
+				_onMessageReceived = value; 
+				ActionName = value?.Method?.Name;
+			} 
+		}
+		public Predicate<IMessage> MessageFilter
+		{ 
+			get => _messageFilter; 
+			set
+			{ 
+				_messageFilter = value; 
+				FilterName = value?.Method?.Name;
+			} 
+		}
 		public MessageReceivedErrorDelegate OnError { get; set; }
+
+		public override string ToString()
+		{
+			return $"{Plugin?.GetType().Name ?? "<System>"} {FilterName ?? "<Unknown Filter>"} {ActionName ?? "<Unknown Action>"}";
+		}
 	}
 }

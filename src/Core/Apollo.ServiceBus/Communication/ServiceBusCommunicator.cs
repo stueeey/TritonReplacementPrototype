@@ -78,16 +78,17 @@ namespace Apollo.ServiceBus.Communication
 				else
 					await receiver.DeadLetterAsync(message.InnerMessage.SystemProperties.LockToken, $"{State[ApolloConstants.RegisteredAsKey]} does not have a plugin which can handle this message");
 			}
-			Debug.Assert(false, "Received a message without having any handlers!");
+			else
+				Debug.Assert(false, "Received a message without having any handlers!");
 		}
 
-		private void CheckIfAnyoneIsWaitingForMessage(IMessage m, MessageReceivedEventArgs e)
+		private bool CheckIfAnyoneIsWaitingForMessage(IMessage m)
 		{
 			if (string.IsNullOrEmpty(m.ResponseTo) || !ReplyWaitList.TryGetValue(m.ResponseTo, out var job)) 
-				return;
+				return false;
 			job.Message = m;
 			job.WaitHandle.Set();
-			e.Status = MessageStatus.Complete;
+			return true;
 		}
 
 		#region Public
@@ -157,12 +158,9 @@ namespace Apollo.ServiceBus.Communication
 		protected virtual MessageStatus OnMessageFirstReceived(ApolloQueue sourceQueue, IMessage message, CancellationToken? token)
 		{
 			AnyMessageReceived?.Invoke(message, sourceQueue);
-			if (ReplyWaitList.TryGetValue(message.Identifier, out var waiter))
-			{
-				waiter.WaitHandle.Set();
-				return MessageStatus.Complete;
-			}
-			return MessageStatus.Unhandled;
+			return CheckIfAnyoneIsWaitingForMessage(message) 
+				? MessageStatus.Complete 
+				: MessageStatus.Unhandled;
 		}
 
 		public T GetState<T>(string key)
@@ -254,7 +252,7 @@ namespace Apollo.ServiceBus.Communication
 					: calculatedTimeout;
 				var job = new MessageWaitJob(DateTime.UtcNow + calculatedTimeout);
 				ReplyWaitList.TryAdd(message.Identifier, job);
-				var replyHandlerToForceListening = new MessageHandler(null, null) { MessageFilter = (m) => false };
+				var replyHandlerToForceListening = MessageHandler.CreateFakeHandler();
 				AddHandler(replyQueue, replyHandlerToForceListening);
 				try
 				{

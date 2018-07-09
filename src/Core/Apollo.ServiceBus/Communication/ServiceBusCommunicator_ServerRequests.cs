@@ -14,12 +14,6 @@ namespace Apollo.ServiceBus.Communication
 		private bool _listenForServerJobs;
 		private readonly object _listenForServerJobsToken = new object();
 
-		void OnServerJobReceived(IMessage m, ref MessageReceivedEventArgs e)
-		{
-			Logger.Debug($"Received a new server job with a label of {m.Label}");
-			CheckIfAnyoneIsWaitingForMessage(m, e);
-		}
-
 		private void HandleListenForServerJobsChanged(bool enabled)
 		{
 			lock (_listenForServerJobsToken)

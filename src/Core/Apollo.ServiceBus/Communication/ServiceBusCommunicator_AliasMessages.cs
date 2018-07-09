@@ -38,12 +38,6 @@ namespace Apollo.ServiceBus.Communication
 			}
 		}
 
-		private void OnAliasMessageReceived(IMessage m, ref MessageReceivedEventArgs e)
-		{
-			Logger.Debug($"Received a new alias message with label {m.Label} for {m[ApolloConstants.TargetAliasKey] ?? "<Unknown>"}");
-			CheckIfAnyoneIsWaitingForMessage(m, e);
-		}
-
 		private async Task StartListeningForAliasMessages(CancellationToken cancellationToken)
 		{
 			while (!cancellationToken.IsCancellationRequested)

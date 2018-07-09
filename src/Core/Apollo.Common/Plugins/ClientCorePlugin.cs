@@ -34,7 +34,7 @@ namespace Apollo.Common.Plugins
 				registrationMessage.TimeToLive = timeOut.Value;
 		    await Communicator.SendRegistrationMessageAsync(registrationMessage);
 		    var response = await Communicator.WaitForReplyTo(registrationMessage);
-		    if (response == null || response.Label != ApolloConstants.PositiveAcknowledgement)
+		    if (response?.Label != ApolloConstants.PositiveAcknowledgement)
 			    return string.Empty;
 		    Logger.Info($"Received confirmation of registration as {response.TargetSession}");
 			Communicator.SignalPluginEvent(RegisteredEventName, response.TargetSession);
@@ -50,7 +50,7 @@ namespace Apollo.Common.Plugins
 		    message.TimeToLive = TimeSpan.FromSeconds(30);
 		    await Communicator.SendRegistrationMessageAsync(message);
 		    var response = await Communicator.WaitForReplyTo(message);
-		    if (response.Label != ApolloConstants.PositiveAcknowledgement || !response.Properties.ContainsKey(AliasTokenKey))
+		    if (response?.Label != ApolloConstants.PositiveAcknowledgement || !response.Properties.ContainsKey(AliasTokenKey))
 		    {
 			    Logger.Warn($"Failed to get ownership of {alias} ({response["Reason"] ?? "Unknown"})");
 			    return Guid.Empty;
