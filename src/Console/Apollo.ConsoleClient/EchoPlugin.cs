@@ -11,7 +11,7 @@ namespace Apollo.ConsoleClient
 
 		public async Task Echo(string echoString)
 		{
-			Console.WriteLine("Sending echo");
+			Logger.Info("Sending echo");
 			var message = MessageFactory.CreateNewMessage();
 			message.Label = EchoKey;
 			message.Properties[EchoKey] = echoString;
@@ -21,15 +21,11 @@ namespace Apollo.ConsoleClient
 		protected override async Task OnInitialized()
 		{
 			await base.OnInitialized();
-			Communicator.ClientSessionMessageReceived += OnEchoRecieved;
-		}
-
-		private void OnEchoRecieved(IMessage message, ref MessageReceivedEventArgs e)
-		{
-			if (message.Label != EchoKey) 
-				return;
-			Console.WriteLine($"Server echo'd {message.Properties[EchoKey]}");
-			e.Status = MessageStatus.Complete;
+			Communicator.AddHandler(ApolloQueue.ClientSessions, new MessageHandler(this, EchoKey, (q, m, token) =>
+			{
+				Logger.Info($"Server echo'd {m.Properties[EchoKey]}");
+				return MessageStatus.Complete;
+			}));
 		}
 	}
 }

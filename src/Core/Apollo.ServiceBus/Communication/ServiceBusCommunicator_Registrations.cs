@@ -11,7 +11,6 @@ namespace Apollo.ServiceBus.Communication
 	public partial class ServiceBusCommunicator
 	{
 		private Task _registrationsListenTask;
-		private OnMessageReceivedDelegate _registrationMessageReceivedDelegate;
 		private CancellationTokenSource _registrationsListenCancellationToken;
 		private bool _listenForRegistrations;
 		private readonly object _listenForRegistrationsToken = new object();
@@ -54,14 +53,7 @@ namespace Apollo.ServiceBus.Communication
 				var message = await RegistrationListener.Value.ReceiveAsync();
 				if (message == null) 
 					continue;
-				var sbMessage = new ServiceBusMessage(message);
-				OnMessageReceived(sbMessage, ApolloQueue.Registrations);
-				await Task.Run(() => InvokeMessageHandlers(
-					RegistrationListener.Value,
-					_registrationMessageReceivedDelegate,
-					sbMessage,
-					_registrationsListenCancellationToken.Token,
-					OnRegistrationReceived), cancellationToken);
+				await InvokeMessageHandlers(RegistrationListener.Value,	ApolloQueue.Registrations, new ServiceBusMessage(message), cancellationToken);
 			}
 		}
 

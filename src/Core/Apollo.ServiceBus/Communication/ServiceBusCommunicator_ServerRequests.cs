@@ -10,7 +10,6 @@ namespace Apollo.ServiceBus.Communication
 	public partial class ServiceBusCommunicator
 	{
 		private Task _serverJobsListenTask;
-		private OnMessageReceivedDelegate _serverJobsMessageReceivedDelegate;
 		private CancellationTokenSource _serverJobsListenCancellationToken;
 		private bool _listenForServerJobs;
 		private readonly object _listenForServerJobsToken = new object();
@@ -51,16 +50,7 @@ namespace Apollo.ServiceBus.Communication
 			{
 				var message = await ServerQueueListener.Value.ReceiveAsync();
 				if (message != null)
-				{
-					var sbMessage = new ServiceBusMessage(message);
-					OnMessageReceived(sbMessage, ApolloQueue.ServerRequests);
-					await Task.Run(() => InvokeMessageHandlers(
-						ServerQueueListener.Value,
-						_serverJobsMessageReceivedDelegate,
-						sbMessage,
-						_serverJobsListenCancellationToken.Token,
-						OnServerJobReceived), cancellationToken);
-				}
+					await Task.Run(() => InvokeMessageHandlers(ServerQueueListener.Value, ApolloQueue.ServerRequests, new ServiceBusMessage(message), cancellationToken));
 			}
 		}
 

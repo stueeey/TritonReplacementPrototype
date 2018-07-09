@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
 
 namespace Apollo.Common.Plugins
@@ -15,9 +16,7 @@ namespace Apollo.Common.Plugins
 		protected override async Task OnInitialized()
 		{
 			await base.OnInitialized();
-
-			// Or we won't get our replies
-			Communicator.ClientSessionMessageReceived += HandlePing;
+			Communicator.AddHandler(ApolloQueue.ClientSessions, PingHandler);
 		}
 
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
@@ -22,80 +23,74 @@ namespace Apollo.Common.Plugins
 	    protected override async Task OnInitialized()
 		{
 			await base.OnInitialized();
-			Communicator.RegistrationReceived += OnRegistrationReceived;
-			Communicator.RegistrationReceived += AliasOwnershipRequestReceived;
-			Communicator.RegistrationReceived += AliasOwnershipClaimReceived;
-			Communicator.AliasMessageReceived += ForwardAliasMessage;
-			Communicator.ServerJobReceived += HandlePing;
-			Communicator.ClientSessionMessageReceived += HandlePing;
+			Communicator.AddHandler(ApolloQueue.Registrations, new MessageHandler(this, ApolloConstants.RegistrationKey, OnRegistrationReceived));
+			Communicator.AddHandler(ApolloQueue.Registrations, new MessageHandler(this, RequestOwnershipLabel, AliasOwnershipRequestReceived));
+			Communicator.AddHandler(ApolloQueue.Registrations, new MessageHandler(this, ClaimOwnershipLabel, AliasOwnershipClaimReceived, OnClaimOwnershipError));
+			Communicator.AddHandler(ApolloQueue.Aliases, new MessageHandler(this, ForwardAliasMessage));
+			Communicator.AddHandler(ApolloQueue.ServerRequests, PingHandler);
+			Communicator.AddHandler(ApolloQueue.ClientSessions, PingHandler);
 		}
 
-	    private void ForwardAliasMessage(IMessage message, ref MessageReceivedEventArgs e)
+	    private MessageStatus ForwardAliasMessage(ApolloQueue queue, IMessage m, CancellationToken? cancelToken)
 	    {
-		    var targetAlias = message.GetStringProperty(ApolloConstants.TargetAliasKey);
+		    var targetAlias = m.GetStringProperty(ApolloConstants.TargetAliasKey);
 		    var owner = _storage.GetAliasOwner(targetAlias);
 		    if (owner == null)
-		    {
-			    Communicator.SendToClientAsync(MessageFactory.CreateNegativeAcknowledgment(message, $"Alias '{targetAlias ?? "<Alias not specified>"}' is not owned or invalid"));
-		    }
+			    Communicator.SendToClientAsync(MessageFactory.CreateNegativeAcknowledgment(m, $"Alias '{targetAlias ?? "<Alias not specified>"}' is not owned or invalid"));
 		    else
 		    {
-			    var forwardedMessage = MessageFactory.CloneMessage(message);
+			    var forwardedMessage = MessageFactory.CloneMessage(m);
 			    forwardedMessage.TargetSession = owner;
 			    Communicator.SendToClientAsync(forwardedMessage);
 		    }
-
+			return MessageStatus.Complete;
 	    }
 
-	    private void OnRegistrationReceived(IMessage m, ref MessageReceivedEventArgs e)
+	    private MessageStatus OnRegistrationReceived(ApolloQueue queue, IMessage m, CancellationToken? cancelToken)
 	    {
-		    if (m.Label != ApolloConstants.RegistrationKey) 
-				return;
-		    Logger.Info($"Received client message {m.Identifier} labelled {m.Label}");
-		    e.Status = MessageStatus.Complete;
+		    Logger.Info($"Received registration request from {m.Identifier}");
 			if (_storage.SaveRegistration(m.ReplyToSession, m.Properties.ToDictionary(p => p.Key, p => p.Value.ToString())))
 				Communicator.SendToClientAsync(Communicator.MessageFactory.CreateAcknowledgment(m));
-	    }
+			return MessageStatus.Complete;
+		}
 
-	    private void AliasOwnershipRequestReceived(IMessage m, ref MessageReceivedEventArgs e)
+	    private MessageStatus AliasOwnershipRequestReceived(ApolloQueue queue, IMessage m, CancellationToken? cancelToken)
 	    {
-		    if (m.Label != RequestOwnershipLabel) 
-			    return;
-		    e.Status = MessageStatus.Complete;
-		    if (_storage.CheckOwnership(m.GetStringProperty(DesiredAliasKey), Guid.Parse(m.GetStringProperty(AliasTokenKey)), m.ReplyToSession))
-		    {
-			    var reply = MessageFactory.CreateAcknowledgment(m);
-			    reply.CopyPropertiesFrom(m);
-			    Communicator.SendToClientAsync(reply);
-		    }
-			else
-			    Communicator.SendToClientAsync(MessageFactory.CreateNegativeAcknowledgment(m, $"Token did not match the one registered for {m.GetStringProperty(DesiredAliasKey)}"));
-	    }
-
-		private void AliasOwnershipClaimReceived(IMessage m, ref MessageReceivedEventArgs e)
-	    {
-		    if (m.Label != ClaimOwnershipLabel) 
-			    return;
-		    try
-		    {
-			    var oldOwner = _storage.TakeOwnership(m.GetStringProperty(DesiredAliasKey), Guid.Parse(m.GetStringProperty(AliasTokenKey)), m.ReplyToSession);
-			    if (oldOwner != null)
-			    {
-				    var lostOwnershipMessage = MessageFactory.CreateNewMessage("Lost Alias Ownership");
-				    lostOwnershipMessage.TargetSession = oldOwner.ToString();
-				    lostOwnershipMessage[DesiredAliasKey] = m.GetStringProperty(DesiredAliasKey);
-				    Communicator.SendToClientAsync(lostOwnershipMessage);
-			    }
+			if (_storage.CheckOwnership(m.GetStringProperty(DesiredAliasKey), Guid.Parse(m.GetStringProperty(AliasTokenKey)), m.ReplyToSession))
+			{
 				var reply = MessageFactory.CreateAcknowledgment(m);
-			    reply.CopyPropertiesFrom(m);
-			    Communicator.SendToClientAsync(reply);
-			    e.Status = MessageStatus.Complete;
-		    }
-		    catch (Exception ex)
-		    {
-			    Logger.Error($"Failed to grant ownership of {m.GetStringProperty(DesiredAliasKey)}", ex);
-			    Communicator.SendToClientAsync(MessageFactory.CreateNegativeAcknowledgment(m, "Encountered an error processing the request"));
-		    }
+				reply.CopyPropertiesFrom(m);
+				Communicator.SendToClientAsync(reply);
+				Logger.Info($"{m.Identifier} granted ownership of alias '{m.GetStringProperty(DesiredAliasKey)}'");
+			}
+			else
+			{
+				Logger.Info($"{m.Identifier} denied ownership of alias '{m.GetStringProperty(DesiredAliasKey)}'");
+				Communicator.SendToClientAsync(MessageFactory.CreateNegativeAcknowledgment(m, $"Token did not match the one registered for {m.GetStringProperty(DesiredAliasKey)}"));
+			}
+			return MessageStatus.Complete;
+		}
+
+		private MessageStatus AliasOwnershipClaimReceived(ApolloQueue queue, IMessage m, CancellationToken? cancelToken)
+	    {
+			var oldOwner = _storage.TakeOwnership(m.GetStringProperty(DesiredAliasKey), Guid.Parse(m.GetStringProperty(AliasTokenKey)), m.ReplyToSession);
+			if (oldOwner != null)
+			{
+				var lostOwnershipMessage = MessageFactory.CreateNewMessage("Lost Alias Ownership");
+				lostOwnershipMessage.TargetSession = oldOwner.ToString();
+				lostOwnershipMessage[DesiredAliasKey] = m.GetStringProperty(DesiredAliasKey);
+				Communicator.SendToClientAsync(lostOwnershipMessage);
+			}
+			var reply = MessageFactory.CreateAcknowledgment(m);
+			reply.CopyPropertiesFrom(m);
+			Communicator.SendToClientAsync(reply);
+			return MessageStatus.Complete;
 	    }
-    }
+
+		private void OnClaimOwnershipError(IMessage m, Exception ex)
+		{
+			Logger.Error($"Failed to grant ownership of {m.GetStringProperty(DesiredAliasKey)}", ex);
+			Communicator.SendToClientAsync(MessageFactory.CreateNegativeAcknowledgment(m, "Encountered an error processing the request"));
+		}
+	}
 }

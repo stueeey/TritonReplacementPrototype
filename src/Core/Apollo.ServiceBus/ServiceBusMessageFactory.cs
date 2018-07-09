@@ -35,25 +35,19 @@ namespace Apollo.ServiceBus
 		    return message;
 	    }
 
-	    public IMessage CreateReply(IMessage receivedMessage)
+	    public IMessage CreateReply(IMessage receivedMessage, string label = null)
 	    {
-		    var response = CreateNewMessage();
+		    var response = CreateNewMessage(label);
 		    response.TargetSession = receivedMessage.ReplyToSession;
 		    response.ResponseTo = receivedMessage.Identifier;
 		    return response;
 	    }
 
-	    public IMessage CreateAcknowledgment(IMessage receivedMessage)
-	    {
-		    var response = CreateReply(receivedMessage);
-		    response.Label = ApolloConstants.PositiveAcknowledgement;
-		    return response;
-	    }
+	    public IMessage CreateAcknowledgment(IMessage receivedMessage) => CreateReply(receivedMessage, ApolloConstants.PositiveAcknowledgement);
 
 	    public IMessage CreateNegativeAcknowledgment(IMessage receivedMessage, string reason)
 	    {
-		    var response = CreateReply(receivedMessage);
-		    response.Label = ApolloConstants.NegativeAcknowledgement;
+		    var response = CreateReply(receivedMessage, ApolloConstants.NegativeAcknowledgement);
 			response["Reason"] = reason;
 		    return response;
 	    }

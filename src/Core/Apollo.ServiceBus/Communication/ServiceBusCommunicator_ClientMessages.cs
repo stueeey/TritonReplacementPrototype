@@ -13,7 +13,6 @@ namespace Apollo.ServiceBus.Communication
 	{
 		private IMessageSession _activeClientSession;
 		private Task _clientSessionListenTask;
-		private OnMessageReceivedDelegate _clientSessionMessageReceivedDelegate;
 		private CancellationTokenSource _clientSessionListenCancellationToken;
 		private bool _listenForClientSessionMessages;
 		private readonly object _listenForClientSessionMessagesToken = new object();
@@ -29,7 +28,7 @@ namespace Apollo.ServiceBus.Communication
 				{
 					_clientSessionListenCancellationToken = new CancellationTokenSource();
 					Logger.Debug("Listening for client messages");
-					_clientSessionListenTask = StartListeningForClientMessages();
+					_clientSessionListenTask = StartListeningForClientMessages(_clientSessionListenCancellationToken.Token);
 				}
 				else if (_activeClientSession != null)
 				{
@@ -48,7 +47,7 @@ namespace Apollo.ServiceBus.Communication
 			CheckIfAnyoneIsWaitingForMessage(m, e);
 		}
 
-		private async Task StartListeningForClientMessages()
+		private async Task StartListeningForClientMessages(CancellationToken cancelToken)
 		{
 			_activeClientSession = await ClientSessionListener.Value.AcceptMessageSessionAsync(State[ApolloConstants.RegisteredAsKey].ToString(), TimeSpan.FromMinutes(30));
 			while (_activeClientSession != null && _clientSessionListenCancellationToken != null && !_clientSessionListenCancellationToken.Token.IsCancellationRequested)
@@ -57,16 +56,7 @@ namespace Apollo.ServiceBus.Communication
 				{
 					var message = await _activeClientSession.ReceiveAsync(TimeSpan.FromSeconds(60));
 					if (message != null)
-					{
-						var sbMessage = new ServiceBusMessage(message);
-						OnMessageReceived(sbMessage, ApolloQueue.ClientSessions);
-						await Task.Run(() => InvokeMessageHandlers(
-							_activeClientSession,
-							_clientSessionMessageReceivedDelegate,
-							sbMessage,
-							_clientSessionListenCancellationToken.Token,
-							OnClientSessionMessageReceived));
-					}
+						await InvokeMessageHandlers(_activeClientSession, ApolloQueue.ClientSessions, new ServiceBusMessage(message), cancelToken);
 				}
 				catch (SessionLockLostException)
 				{

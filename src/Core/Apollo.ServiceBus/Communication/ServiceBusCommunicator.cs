@@ -50,29 +50,35 @@ namespace Apollo.ServiceBus.Communication
 
 		protected ConcurrentDictionary<string, MessageWaitJob> ReplyWaitList { get; } = new ConcurrentDictionary<string, MessageWaitJob>();
 
-		private async Task InvokeMessageHandlers(IReceiverClient receiver, Delegate handlers, ServiceBusMessage message, CancellationToken token, OnMessageReceivedDelegate baseHandler)
+		private async Task InvokeMessageHandlers(IReceiverClient receiver, ApolloQueue queue, ServiceBusMessage message, CancellationToken? token)
 		{
 			if (message == null)
 				return;
-			var e = new MessageReceivedEventArgs(this, token);
-			baseHandler.Invoke(message, ref e);
-			foreach (var handler in handlers?.GetInvocationList() ?? new Delegate[] { })
+
+			if (Handlers.TryGetValue(queue, out var handlers))
 			{
-				if (e.Status.HasFlag(MessageStatus.Handled))
-					break;
-				try
+				var status = MessageStatus.Unhandled;
+				foreach (var handler in handlers.Where(h => h.PassesFilter(message)))
 				{
-					((OnMessageReceivedDelegate) handler).Invoke(message, ref e);
+					try
+					{
+						if (token?.IsCancellationRequested ?? false)
+							return;
+						status = handler.HandleMessage(queue, message, token);
+						if (status.HasFlag(MessageStatus.Handled))
+							break;
+					}
+					catch (Exception ex)
+					{
+						Logger.Error($"Encountered an error in {handler.OnMessageReceived.Method.DeclaringType?.Name ?? "<Unknown>"}.{handler.OnMessageReceived.Method.Name} while handling a message labelled {message.Label}", ex);
+					}
 				}
-				catch (Exception ex)
-				{
-					Logger.Error($"Encountered an error in {handler.Method.DeclaringType?.Name ?? "<Unknown>"}.{handler.Method.Name} while handling a message labelled {message.Label}", ex);
-				}
+				if (status.HasFlag(MessageStatus.MarkedForDeletion))
+					await receiver.CompleteAsync(message.InnerMessage.SystemProperties.LockToken);
+				else
+					await receiver.DeadLetterAsync(message.InnerMessage.SystemProperties.LockToken, $"{State[ApolloConstants.RegisteredAsKey]} does not have a plugin which can handle this message");
 			}
-			if (e.Status.HasFlag(MessageStatus.MarkedForDeletion))
-				await receiver.CompleteAsync(message.InnerMessage.SystemProperties.LockToken);
-			else
-				await receiver.DeadLetterAsync(message.InnerMessage.SystemProperties.LockToken);
+			Debug.Assert(false, "Received a message without having any handlers!");
 		}
 
 		private void CheckIfAnyoneIsWaitingForMessage(IMessage m, MessageReceivedEventArgs e)
@@ -106,10 +112,10 @@ namespace Apollo.ServiceBus.Communication
 				if (listener.Name == "Microsoft.Azure.ServiceBus")
 				{
 					// receive event from Service Bus DiagnosticSource
-					listener.Subscribe(delegate (KeyValuePair<string, object> evnt)
+					listener.Subscribe(delegate (KeyValuePair<string, object> @event)
 					{
 						// Log operation details once it's done
-						if (!evnt.Key.EndsWith("Stop")) 
+						if (!@event.Key.EndsWith("Stop")) 
 							return;
 						var currentActivity = Activity.Current;
 						TraceLogger.Debug($"{currentActivity.OperationName} Duration: {currentActivity.Duration}\n\t{string.Join("\n\t", currentActivity.Tags)}");
@@ -129,8 +135,28 @@ namespace Apollo.ServiceBus.Communication
 				AddHandler(queueType, systemMessageHandler);
 		}
 
-		protected virtual MessageStatus OnMessageFirstReceived(IServiceCommunicator serviceCommunicator, IMessage message)
+		private void ListenToQueue(ApolloQueue queueType, bool listen)
 		{
+			switch (queueType)
+			{
+				case ApolloQueue.Registrations:
+					ListeningForRegistrations = listen;
+					break;
+				case ApolloQueue.ServerRequests:
+					ListeningForServerJobs = listen;
+					break;
+				case ApolloQueue.Aliases:
+					ListeningForAliasMessages = listen;
+					break;
+				case ApolloQueue.ClientSessions:
+					ListeningForClientSessionMessages = listen;
+					break;
+			}
+		}
+
+		protected virtual MessageStatus OnMessageFirstReceived(ApolloQueue sourceQueue, IMessage message, CancellationToken? token)
+		{
+			AnyMessageReceived?.Invoke(message, sourceQueue);
 			if (ReplyWaitList.TryGetValue(message.Identifier, out var waiter))
 			{
 				waiter.WaitHandle.Set();
@@ -163,42 +189,28 @@ namespace Apollo.ServiceBus.Communication
 		public bool ListeningForClientSessionMessages
 		{
 			get => _listenForClientSessionMessages;
-			protected set => HandleListenForClientMessagesChanged(value);
+			private set => HandleListenForClientMessagesChanged(value);
 		}
 
 		public bool ListeningForRegistrations
 		{
 			get => _listenForRegistrations;
-			protected set => HandleListenForRegistrationsChanged(value);
+			private set => HandleListenForRegistrationsChanged(value);
 		}
 
 		public bool ListeningForServerJobs
 		{
 			get => _listenForServerJobs;
-			protected set => HandleListenForServerJobsChanged(value);
+			private set => HandleListenForServerJobsChanged(value);
 		}
 
 		public bool ListeningForAliasMessages
 		{
 			get => _listenForAliasSessionMessages;
-			protected set => HandleListenForAliasMessagesChanged(value);
+			private set => HandleListenForAliasMessagesChanged(value);
 		}
 
 		public event PluginEventDelegate PluginEvent;
-		public event OnMessageReceivedDelegate AliasMessageReceived
-		{
-			add
-			{
-				_aliasMessageReceivedDelegate = (OnMessageReceivedDelegate)Delegate.Combine(_aliasMessageReceivedDelegate, value);
-				ListeningForAliasMessages = true;
-			}
-			remove
-			{
-				_aliasMessageReceivedDelegate = (OnMessageReceivedDelegate)Delegate.Remove(_aliasMessageReceivedDelegate, value);
-				if (!_aliasMessageReceivedDelegate?.GetInvocationList().Any() ?? false)
-					ListeningForAliasMessages = false;
-			}
-		}
 
 		private void OnMessageSent(IMessage message, ApolloQueue queue)
 		{
@@ -227,55 +239,13 @@ namespace Apollo.ServiceBus.Communication
 		public event OnMessageSent AnyMessageSent;
 		public event OnMessageReceived AnyMessageReceived;
 
-		public event OnMessageReceivedDelegate ClientSessionMessageReceived
-		{
-			add
-			{
-				_clientSessionMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Combine(_clientSessionMessageReceivedDelegate, value);
-				ListeningForClientSessionMessages = true;
-			}
-			remove
-			{
-				_clientSessionMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Remove(_clientSessionMessageReceivedDelegate, value);
-				if (!_clientSessionMessageReceivedDelegate?.GetInvocationList().Any() ?? false)
-					ListeningForClientSessionMessages = false;
-			}
-		}
-
-		public event OnMessageReceivedDelegate RegistrationReceived
-		{
-			add
-			{
-				_registrationMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Combine(_registrationMessageReceivedDelegate, value);
-				ListeningForRegistrations = true;
-			}
-			remove
-			{
-				_registrationMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Remove(_registrationMessageReceivedDelegate, value);
-				if (!_registrationMessageReceivedDelegate?.GetInvocationList().Any() ?? false)
-					ListeningForRegistrations = false;
-			}
-		}
-
-		public event OnMessageReceivedDelegate ServerJobReceived
-		{
-			add
-			{
-				_serverJobsMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Combine(_serverJobsMessageReceivedDelegate, value);
-				ListeningForServerJobs = true;
-			}
-			remove
-			{
-				_serverJobsMessageReceivedDelegate = (OnMessageReceivedDelegate) Delegate.Remove(_serverJobsMessageReceivedDelegate, value);
-				if (!_serverJobsMessageReceivedDelegate?.GetInvocationList().Any() ?? false)
-					ListeningForServerJobs = false;
-			}
-		}
-
 		public Task<IMessage> WaitForReplyTo(IMessage message, CancellationToken? token = null, TimeSpan? timeout = null)
 		{
 			return Task.Run(() =>
 			{
+				if (message == null)
+					throw new ArgumentNullException(nameof(message));
+				var replyQueue = GetReplyQueueForMessage(message) ?? throw new ArgumentException($"Cannot wait for a reply to a message which does not have a valid {nameof(IMessage.ReplyToEntity)}");
 				var calculatedTimeout = (timeout ?? message.TimeToLive);
 				if (calculatedTimeout > ApolloConstants.MaximumReplyWaitTime)
 					calculatedTimeout = ApolloConstants.MaximumReplyWaitTime;
@@ -284,6 +254,8 @@ namespace Apollo.ServiceBus.Communication
 					: calculatedTimeout;
 				var job = new MessageWaitJob(DateTime.UtcNow + calculatedTimeout);
 				ReplyWaitList.TryAdd(message.Identifier, job);
+				var replyHandlerToForceListening = new MessageHandler(null, null) { MessageFilter = (m) => false };
+				AddHandler(replyQueue, replyHandlerToForceListening);
 				try
 				{
 					if (token.HasValue)
@@ -301,10 +273,24 @@ namespace Apollo.ServiceBus.Communication
 				finally
 				{
 					ReplyWaitList.TryRemove(message.Identifier, out _);
+					RemoveHandler(replyQueue, replyHandlerToForceListening);
 				}
 				return null;
 			});
 			
+		}
+
+		private ApolloQueue? GetReplyQueueForMessage(IMessage message)
+		{
+			if (StringComparer.OrdinalIgnoreCase.Equals(message.ReplyToEntity, Configuration.ClientAliasesQueue))
+				return ApolloQueue.Aliases;
+			if (StringComparer.OrdinalIgnoreCase.Equals(message.ReplyToEntity, Configuration.RegisteredClientsQueue))
+				return ApolloQueue.ClientSessions;
+			if (StringComparer.OrdinalIgnoreCase.Equals(message.ReplyToEntity, Configuration.RegistrationQueue))
+				return ApolloQueue.Registrations;
+			if (StringComparer.OrdinalIgnoreCase.Equals(message.ReplyToEntity, Configuration.ServerRequestsQueue))
+				return ApolloQueue.ServerRequests;
+			return null;
 		}
 
 		public void AddHandler(ApolloQueue queueType, MessageHandler handler)
@@ -317,6 +303,8 @@ namespace Apollo.ServiceBus.Communication
 					Handlers[queueType].Add(handler);
 				else
 					Handlers.Add(queueType, new List<MessageHandler> { handler });
+				if (Handlers[queueType].Count > 1)
+					ListenToQueue(queueType, true);
 			}
 		}
 
@@ -331,6 +319,8 @@ namespace Apollo.ServiceBus.Communication
 				Handlers[queueType].Remove(handler);
 				if (!Handlers[queueType].Any())
 					Handlers.Remove(queueType);
+				else if (Handlers[queueType].Count <= 1)
+					ListenToQueue(queueType, false);
 			}
 		}
 
@@ -340,9 +330,6 @@ namespace Apollo.ServiceBus.Communication
 
 		public void Dispose()
 		{
-			_clientSessionMessageReceivedDelegate = null;
-			_serverJobsMessageReceivedDelegate = null;
-			_registrationMessageReceivedDelegate = null;
 			ListeningForClientSessionMessages = false;
 			ListeningForRegistrations = false;
 			ListeningForServerJobs = false;

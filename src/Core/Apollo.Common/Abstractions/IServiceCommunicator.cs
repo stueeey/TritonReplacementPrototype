@@ -7,7 +7,6 @@ using Apollo.Common.Infrastructure;
 
 namespace Apollo.Common.Abstractions
 {
-	public delegate void OnMessageReceivedDelegate(IMessage message, ref MessageReceivedEventArgs e);
 	public delegate void PluginEventDelegate(string eventName, object state);
 	public delegate void OnMessageReceived(IMessage message, ApolloQueue queue);
 	public delegate void OnMessageSent(IMessage message, ApolloQueue queue);
@@ -45,10 +44,6 @@ namespace Apollo.Common.Abstractions
 		bool ListeningForAliasMessages { get; }
 
 		event PluginEventDelegate PluginEvent;
-		event OnMessageReceivedDelegate ClientSessionMessageReceived;
-		event OnMessageReceivedDelegate RegistrationReceived;
-		event OnMessageReceivedDelegate ServerJobReceived;
-		event OnMessageReceivedDelegate AliasMessageReceived;
 		event OnMessageSent AnyMessageSent;
 		event OnMessageReceived AnyMessageReceived;
 

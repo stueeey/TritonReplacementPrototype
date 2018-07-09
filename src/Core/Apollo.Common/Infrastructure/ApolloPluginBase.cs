@@ -18,6 +18,8 @@ namespace Apollo.Common.Infrastructure
 			Logger = log ?? ClassLogger;
 		}
 
+		public ILog GetLogger() => Logger;
+
 		protected ApolloPluginBase()
 		{
 			SetLogger();

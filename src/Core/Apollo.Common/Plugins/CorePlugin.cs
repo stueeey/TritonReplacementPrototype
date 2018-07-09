@@ -8,16 +8,23 @@ namespace Apollo.Common.Plugins
 {
     public abstract class CorePlugin : ApolloPluginBase
     {
-	    protected void HandlePing(IMessage message, ref MessageReceivedEventArgs e)
+		private const string pingResponse = "Ping Response";
+		private const string ping = "Ping";
+		protected MessageHandler PingHandler;
+
+		protected CorePlugin()
+		{
+			PingHandler = new MessageHandler(this, ping, HandlePing);
+		}
+
+	    protected virtual MessageStatus HandlePing(ApolloQueue targetQueue, IMessage message, CancellationToken? token)
 	    {
-		    if (message.Label != "Ping")
-			    return;
-		    var response = MessageFactory.CreateReply(message);
-		    response.Label = "Ping Response";
-		    response[nameof(PingStats.ServedBy)] = Communicator.GetState<string>(ApolloConstants.RegisteredAsKey);
-		    response[nameof(PingStats.TimeRequestEnqueuedUtc)] = message.EnqueuedTimeUtc;
-		    Communicator.SendToClientAsync(response);
-	    }
+			var response = MessageFactory.CreateReply(message, pingResponse);
+			response[nameof(PingStats.ServedBy)] = Communicator.GetState<string>(ApolloConstants.RegisteredAsKey);
+			response[nameof(PingStats.TimeRequestEnqueuedUtc)] = message.EnqueuedTimeUtc;
+			Communicator.SendToClientAsync(response);
+			return MessageStatus.Complete;
+		}
 
 	    public Task<PingStats> PingServer(TimeSpan? timeOut = null, CancellationToken? cancellationToken = null)
 	    {
@@ -43,7 +50,7 @@ namespace Apollo.Common.Plugins
 		    var retVal = new PingStats();
 		    try
 		    {
-			    var message = MessageFactory.CreateNewMessage("Ping");
+			    var message = MessageFactory.CreateNewMessage(ping);
 			    var startTime = DateTime.UtcNow;
 			    message.TimeToLive = timeOut ?? TimeSpan.FromSeconds(30);
 			    await sendMessage(message);
@@ -53,7 +60,7 @@ namespace Apollo.Common.Plugins
 				    case ApolloConstants.NegativeAcknowledgement:
 					    retVal.Result = PingStats.PingResult.AddresseeNotFound;
 					    break;
-				    case "Ping Response":
+				    case pingResponse:
 					    retVal.RoundTripTime = DateTime.UtcNow - startTime;
 					    retVal.TimeResponseEnqueuedUtc = response.EnqueuedTimeUtc;
 					    retVal.TimeRequestEnqueuedUtc = (DateTime) (response[nameof(PingStats.TimeRequestEnqueuedUtc)] ?? DateTime.MinValue);

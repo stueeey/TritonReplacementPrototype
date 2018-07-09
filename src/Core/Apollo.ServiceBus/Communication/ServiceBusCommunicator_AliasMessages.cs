@@ -10,7 +10,6 @@ namespace Apollo.ServiceBus.Communication
 	public partial class ServiceBusCommunicator
 	{
 		private Task _aliasSessionListenTask;
-		private OnMessageReceivedDelegate _aliasMessageReceivedDelegate;
 		private CancellationTokenSource _aliasSessionListenCancellationToken;
 		private bool _listenForAliasSessionMessages;
 		private readonly object _listenForAliasSessionMessagesToken = new object();
@@ -51,16 +50,7 @@ namespace Apollo.ServiceBus.Communication
 			{
 				var message = await AliasQueueListener.Value.ReceiveAsync();
 				if (message != null)
-				{
-					var sbMessage = new ServiceBusMessage(message);
-					OnMessageReceived(sbMessage, ApolloQueue.Aliases);
-					await Task.Run(() => InvokeMessageHandlers(
-						AliasQueueListener.Value,
-						_aliasMessageReceivedDelegate,
-						sbMessage,
-						_aliasSessionListenCancellationToken.Token,
-						OnAliasMessageReceived), cancellationToken);
-				}
+					await Task.Run(() => InvokeMessageHandlers(AliasQueueListener.Value, ApolloQueue.Aliases, new ServiceBusMessage(message), cancellationToken));
 			}
 		}
 
