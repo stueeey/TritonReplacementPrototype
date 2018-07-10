@@ -28,7 +28,7 @@
     "AKS": {
       "commandName": "AzureDevSpaces",
       "resourceGroup": "Apollo-Production",
-      "aksName": "ApolloAKS-Production",
+      "aksName": "ApolloServerCluster-Production",
       "subscriptionId": "4aa94c3b-dfc7-4efe-864f-363961578773"
     }
   }

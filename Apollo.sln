@@ -23,7 +23,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ServerCluster", "ServerClus
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Apollo.Diagnostics", "src\Core\Apollo.Diagnostics\Apollo.Diagnostics.csproj", "{BA847D8C-C66D-4293-8E93-96974EB2DB6D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Apollo.Server.Kubernetes", "src\ServerCluster\Apollo.Server.Kubernetes\Apollo.Server.Kubernetes.csproj", "{940C9223-967F-4A8A-B7AD-BDCD9C8C4D40}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Apollo.Server.Kubernetes", "src\ServerCluster\Apollo.Server.Kubernetes\Apollo.Server.Kubernetes.csproj", "{940C9223-967F-4A8A-B7AD-BDCD9C8C4D40}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E9CE4309-4F98-4E19-B537-9A2AFEAD0A4A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Apollo.ServiceBus.Mocks", "src\Tests\Mocks\Apollo.ServiceBus.Mocks\Apollo.ServiceBus.Mocks.csproj", "{D9F78451-4D83-4493-8FA3-300A4A4D082D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,6 +63,10 @@ Global
 		{940C9223-967F-4A8A-B7AD-BDCD9C8C4D40}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{940C9223-967F-4A8A-B7AD-BDCD9C8C4D40}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{940C9223-967F-4A8A-B7AD-BDCD9C8C4D40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9F78451-4D83-4493-8FA3-300A4A4D082D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9F78451-4D83-4493-8FA3-300A4A4D082D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9F78451-4D83-4493-8FA3-300A4A4D082D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9F78451-4D83-4493-8FA3-300A4A4D082D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -71,6 +79,7 @@ Global
 		{B8BB79E4-8C2C-4197-AF97-1C1FB6C99006} = {5F544680-F1C6-4DFE-9E8D-709347261461}
 		{BA847D8C-C66D-4293-8E93-96974EB2DB6D} = {F442C8DB-0907-4570-8F14-19CA04CE84E2}
 		{940C9223-967F-4A8A-B7AD-BDCD9C8C4D40} = {78E97214-4E1A-4086-9585-5B2C57FE8B2B}
+		{D9F78451-4D83-4493-8FA3-300A4A4D082D} = {E9CE4309-4F98-4E19-B537-9A2AFEAD0A4A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FBDCED95-2FB8-4563-A50F-01287698A8B6}

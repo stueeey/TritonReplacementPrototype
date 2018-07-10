@@ -42,9 +42,10 @@ namespace Apollo.ServiceBus.Communication
 		{
 			while (!cancellationToken.IsCancellationRequested)
 			{
-				var message = await AliasQueueListener.Value.ReceiveAsync();
-				if (message != null)
-					await Task.Run(() => InvokeMessageHandlers(AliasQueueListener.Value, ApolloQueue.Aliases, new ServiceBusMessage(message), cancellationToken));
+				var messages = await AliasQueueListener.Value.ReceiveAsync(5, TimeSpan.FromSeconds(5));
+				if (messages != null)
+					foreach (var message in messages)
+						await Task.Run(() => InvokeMessageHandlers(AliasQueueListener.Value, ApolloQueue.Aliases, new ServiceBusMessage(message), cancellationToken));
 			}
 		}
 
