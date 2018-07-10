@@ -3,6 +3,7 @@ using Microsoft.Azure.ServiceBus.Core;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -92,24 +93,37 @@ namespace Apollo.ServiceBus.Mocks
 			throw new NotImplementedException();
 		}
 
-		public Task<Message> ReceiveAsync()
+		public async Task<Message> ReceiveAsync()
 		{
-			throw new NotImplementedException();
+			return (await ReceiveAsync(1, TimeSpan.FromSeconds(5)))?.FirstOrDefault();
 		}
 
-		public Task<Message> ReceiveAsync(TimeSpan operationTimeout)
+		public async Task<Message> ReceiveAsync(TimeSpan operationTimeout)
 		{
-			throw new NotImplementedException();
+			return (await ReceiveAsync(1, operationTimeout))?.FirstOrDefault();
 		}
 
 		public Task<IList<Message>> ReceiveAsync(int maxMessageCount)
 		{
-			throw new NotImplementedException();
+			return ReceiveAsync(maxMessageCount, TimeSpan.FromSeconds(5));
 		}
 
 		public Task<IList<Message>> ReceiveAsync(int maxMessageCount, TimeSpan operationTimeout)
 		{
-			throw new NotImplementedException();
+			return Task.Run(() =>
+			{
+				var expiry = DateTimeOffset.UtcNow.Add(operationTimeout);
+				var retVal = new List<Message>();
+				while (retVal.Count < maxMessageCount && DateTimeOffset.UtcNow < expiry)
+				{
+					SpinWait.SpinUntil(() => !_queue.IsEmpty || DateTimeOffset.UtcNow >= expiry);
+					if (_queue.TryDequeue(out var msg))
+						retVal.Add(msg.Message);
+				}
+				return retVal.Any()
+					? (IList<Message>)retVal
+					: null;
+			});
 		}
 
 		public Task<Message> ReceiveDeferredMessageAsync(long sequenceNumber)

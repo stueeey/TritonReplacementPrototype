@@ -11,6 +11,13 @@ namespace Apollo.ServiceBus.Mocks
 {
 	public class MockServiceBusImplementations : IServiceBusImplementations
 	{
+		private string _clientId;
+		public MockServiceBusImplementations(string clientId)
+		{
+			_clientId = clientId;
+			Recreate().Wait();
+		}
+
 		public Dictionary<ApolloQueue, ConcurrentQueue<MockMessage>> Queues = new Dictionary<ApolloQueue, ConcurrentQueue<MockMessage>>
 		{
 			{ ApolloQueue.Aliases, new ConcurrentQueue<MockMessage>() },
@@ -41,10 +48,15 @@ namespace Apollo.ServiceBus.Mocks
 			{
 				RegistrationListener = new Lazy<IMessageReceiver>(() => new MockMessageReceiver(Queues[ApolloQueue.Registrations]));
 				ServerQueueListener = new Lazy<IMessageReceiver>(() => new MockMessageReceiver(Queues[ApolloQueue.ServerRequests]));
-				//ClientSessionListener = new Lazy<IMessageReceiver>(() => new MockMessageReceiver(Queues[ApolloQueue.ClientSessions]));
+				ClientSessionListener = new Lazy<ISessionClient>(() => new MockSessionClient(Queues[ApolloQueue.ClientSessions], _clientId));
 				AliasQueueListener = new Lazy<IMessageReceiver>(() => new MockMessageReceiver(Queues[ApolloQueue.Aliases]));
+
+				RegistrationSender = new Lazy<IMessageSender>(() => new MockMessageSender(Queues[ApolloQueue.Registrations]));
+				ServerQueueSender = new Lazy<IMessageSender>(() => new MockMessageSender(Queues[ApolloQueue.ServerRequests]));
+				ClientSessionSender = new Lazy<IMessageSender>(() => new MockMessageSender(Queues[ApolloQueue.ClientSessions]));
+				AliasQueueSender = new Lazy<IMessageSender>(() => new MockMessageSender(Queues[ApolloQueue.Aliases]));
 			});
 			
-		}
+		} 
 	}
 }
