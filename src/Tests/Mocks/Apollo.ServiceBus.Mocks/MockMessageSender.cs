@@ -5,16 +5,19 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Apollo.Common.Abstractions;
 
 namespace Apollo.ServiceBus.Mocks
 {
 	public class MockMessageSender : IMessageSender
 	{
-		public ConcurrentQueue<MockMessage> _queue;
+		public ApolloQueue QueueType;
+		public MockServiceBusQueues Queues;
 
-		public MockMessageSender(ConcurrentQueue<MockMessage> queue)
+		public MockMessageSender(MockServiceBusQueues queues, ApolloQueue queueType)
 		{
-			_queue = queue;
+			QueueType = queueType;
+			Queues = queues;
 		}
 
 		public string ClientId => throw new NotImplementedException();
@@ -51,7 +54,7 @@ namespace Apollo.ServiceBus.Mocks
 
 		public Task SendAsync(Message message)
 		{
-			return Task.Run(() => _queue.Enqueue(new MockMessage { Message = message }));
+			return Task.Run(() => Queues.GetQueue(QueueType, message.SessionId).Enqueue(new MockMessage { Message = message }));
 		}
 
 		public Task SendAsync(IList<Message> messageList)
@@ -59,7 +62,7 @@ namespace Apollo.ServiceBus.Mocks
 			return Task.Run(() =>
 			{
 				foreach (var message in messageList)
-					_queue.Enqueue(new MockMessage { Message = message });
+					Queues.GetQueue(QueueType, message.SessionId).Enqueue(new MockMessage {Message = message});
 			});
 		}
 
