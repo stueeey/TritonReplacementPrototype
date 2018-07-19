@@ -5,11 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Apollo.Common\Apollo.Common.csproj" />
+    <PackageReference Include="xunit.abstractions" Version="2.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Plugins\" />
+    <ProjectReference Include="..\..\..\Core\Apollo.Common\Apollo.Common.csproj" />
   </ItemGroup>
 
 </Project>

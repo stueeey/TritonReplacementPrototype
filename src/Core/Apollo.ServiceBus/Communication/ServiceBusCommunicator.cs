@@ -157,7 +157,7 @@ namespace Apollo.ServiceBus.Communication
 
 		protected virtual MessageStatus OnMessageFirstReceived(ApolloQueue sourceQueue, IMessage message, CancellationToken? token)
 		{
-			AnyMessageReceived?.Invoke(message, sourceQueue);
+			OnMessageReceived(message, sourceQueue);
 			return CheckIfAnyoneIsWaitingForMessage(message) 
 				? MessageStatus.Complete 
 				: MessageStatus.Unhandled;

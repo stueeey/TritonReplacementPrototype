@@ -42,6 +42,13 @@ namespace Apollo.Common
 		    return GetPlugin<ClientCorePlugin>().RegisterAsync(metadata, timeout);
 	    }
 
+	    public Task<Guid> TakeOwnershipOfAliasAsync(string alias, Guid token)
+	    {
+		    return GetPlugin<ClientCorePlugin>().TakeOwnershipOfAliasAsync(alias, token);
+	    }
+
 	    #endregion
+
+	    
     }
 }

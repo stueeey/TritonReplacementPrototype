@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
 
-namespace Apollo.Diagnostics.Plugins
+namespace Apollo.Common.Plugins
 {
     public class MessageCounterPlugin : ApolloPluginBase
     {

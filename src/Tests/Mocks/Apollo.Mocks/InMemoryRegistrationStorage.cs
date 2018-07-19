@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Apollo.Common.Abstractions;
 
-namespace Apollo.ConsoleServer
+namespace Apollo.Mocks
 {
 	public class InMemoryRegistrationStorage : IRegistrationStorage
 	{
@@ -23,6 +23,15 @@ namespace Apollo.ConsoleServer
 				return false;
 			_registeredClients.AddOrUpdate(identifier, metadata, (guid, oldValue) => metadata);
 			return true;
+		}
+
+		public IDictionary<string, string> LoadRegistration(string identifier)
+		{
+			if (string.IsNullOrWhiteSpace(identifier))
+				return null;
+			return _registeredClients.TryGetValue(identifier, out var metadata) 
+				? metadata : 
+				null;
 		}
 
 		public bool CheckOwnership(string alias, Guid token, string candidateIdentifier)

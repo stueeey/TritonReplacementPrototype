@@ -9,6 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Services\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
@@ -31,9 +32,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Apollo.Common\Apollo.Common.csproj" />
-    <ProjectReference Include="..\..\Core\Apollo.Diagnostics\Apollo.Diagnostics.csproj" />
     <ProjectReference Include="..\..\Core\Apollo.ServiceBus\Apollo.ServiceBus.csproj" />
     <ProjectReference Include="..\..\Ioc\Apollo.ServiceBus.Ninject\Apollo.ServiceBus.Ninject.csproj" />
+    <ProjectReference Include="..\..\Tests\Mocks\Apollo.Mocks\Apollo.Mocks.csproj" />
   </ItemGroup>
 
 </Project>

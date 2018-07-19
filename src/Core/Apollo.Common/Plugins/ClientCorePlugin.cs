@@ -12,6 +12,7 @@ namespace Apollo.Common.Plugins
 		private const string AliasTokenKey = "Alias Token";
 		private const string RegisteredEventName = "Registered";
 		private const string RequestAliasKey = "Request Alias Ownership";
+	    private const string TakeAliasKey = "Take Alias Ownership";
 
 		protected override async Task OnInitialized()
 		{
@@ -61,6 +62,25 @@ namespace Apollo.Common.Plugins
 		    return responseToken;
 	    }
 
-	    
-	}
+
+	    public async Task<Guid> TakeOwnershipOfAliasAsync(string alias, Guid token)
+	    {
+		    Logger.Info($"Taking ownership of alias '{alias}'");
+		    var message = MessageFactory.CreateNewMessage(TakeAliasKey);
+		    message.Properties[DesiredAliasKey] = alias;
+		    message.Properties[AliasTokenKey] = token.ToString();
+		    message.TimeToLive = TimeSpan.FromSeconds(30);
+		    await Communicator.SendRegistrationMessageAsync(message);
+		    var response = await Communicator.WaitForReplyTo(message);
+		    if (response?.Label != ApolloConstants.PositiveAcknowledgement || !response.Properties.ContainsKey(AliasTokenKey))
+		    {
+			    Logger.Warn($"Failed to take ownership of {alias} ({response["Reason"] ?? "Unknown"})");
+			    return Guid.Empty;
+		    }
+		    Logger.Warn($"Successfully took ownership of {alias}");
+		    var responseToken = Guid.Parse(response.GetStringProperty(AliasTokenKey));
+		    Communicator.State[alias] = responseToken;
+		    return responseToken;
+	    }
+    }
 }
