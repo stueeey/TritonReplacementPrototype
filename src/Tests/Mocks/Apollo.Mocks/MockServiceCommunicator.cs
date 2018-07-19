@@ -272,6 +272,8 @@ namespace Apollo.Mocks
 					}
 				}
 
+				if (message.Label == ApolloConstants.PositiveAcknowledgement || message.Label == ApolloConstants.NegativeAcknowledgement)
+					return;
 				if (status == MessageStatus.Unhandled)
 					throw new Exception($"Received a message from {queue} with label '{message.Label}' which no handler could handle");
 				if (!status.HasFlag(MessageStatus.MarkedForDeletion))
@@ -414,8 +416,8 @@ namespace Apollo.Mocks
 				var calculatedTimeout = (timeout ?? message.TimeToLive);
 				if (calculatedTimeout > ApolloConstants.MaximumReplyWaitTime)
 					calculatedTimeout = ApolloConstants.MaximumReplyWaitTime;
-				calculatedTimeout = calculatedTimeout == TimeSpan.Zero
-					? TimeSpan.FromSeconds(10)
+				calculatedTimeout = calculatedTimeout > TimeSpan.FromSeconds(1)
+					? TimeSpan.FromSeconds(1)
 					: calculatedTimeout;
 				var job = new MessageWaitJob(DateTime.UtcNow + calculatedTimeout);
 				ReplyWaitList.TryAdd(message.Identifier, job);
