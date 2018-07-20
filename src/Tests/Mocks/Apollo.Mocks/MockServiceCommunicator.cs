@@ -3,8 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Apollo.Common;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
 using Xunit.Abstractions;
@@ -14,12 +16,6 @@ namespace Apollo.Mocks
 {
 	public class MockServiceCommunicator : IServiceCommunicator
 	{
-		public static void LogHeaders(ITestOutputHelper logger)
-		{
-			var headings = $"{"SENDER/RECIEVER".PadRight(18)}  <=>  {"MESSAGE".PadRight(7)} | {"QUEUE".PadRight(14)} | {"ADDRESSEE".PadRight(18)} | LABEL";
-			logger.WriteLine(headings);
-			logger.WriteLine(new string('-', headings.Length));
-		}
 
 		protected class MessageWaitJob
 		{
@@ -252,34 +248,43 @@ namespace Apollo.Mocks
 			if (message == null)
 				return;
 
-			if (_handlers.TryGetValue(queue, out var handlers))
+			try
 			{
-				var status = MessageStatus.Unhandled;
-				foreach (var handler in handlers.Where(h => h.PassesFilter(message)))
+				if (_handlers.TryGetValue(queue, out var handlers))
 				{
-					try
+					var status = MessageStatus.Unhandled;
+					foreach (var handler in handlers.Where(h => h.PassesFilter(message)))
 					{
-						if (token?.IsCancellationRequested ?? false)
-							return;
-						status = handler.HandleMessage(queue, message, token);
-						if (status.HasFlag(MessageStatus.Handled))
-							break;
+						try
+						{
+							if (token?.IsCancellationRequested ?? false)
+								return;
+							status = handler.HandleMessage(queue, message, token);
+							if (status.HasFlag(MessageStatus.Handled))
+								break;
+						}
+						catch (Exception ex)
+						{
+							_service.AsyncListeningExceptions.Add(ExceptionDispatchInfo.Capture(ex));
+							_logger?.WriteLine($"{ex.Message} (This would normally be suppressed by the system)");
+							throw;
+						}
 					}
-					catch (Exception ex)
-					{
-						_logger?.WriteLine($"{ex.Message} (This would normally be suppressed by the system)");
-						throw;
-					}
-				}
 
-				if (status == MessageStatus.Unhandled)
-					throw new Exception($"Received a message from {queue} with label '{message.Label}' which no handler could handle");
-				if (!status.HasFlag(MessageStatus.MarkedForDeletion))
-					_service.Enqueue(message, queue, _identifier);
-				
+					if (status == MessageStatus.Unhandled)
+						throw new Exception($"{_identifier} received a message from {queue} with label '{message.Label}' which no handler could handle");
+					if (!status.HasFlag(MessageStatus.MarkedForDeletion))
+						_service.Enqueue(message, queue, _identifier);
+
+				}
+				else
+					Debug.Assert(false, "Received a message without having any handlers!");
 			}
-			else
-				Debug.Assert(false, "Received a message without having any handlers!");
+			catch (Exception ex)
+			{
+				_logger?.WriteLine($"{ex.Message} (This would normally be suppressed by the system)");
+				_service.AsyncListeningExceptions.Add(ExceptionDispatchInfo.Capture(ex));
+			}
 		}
 
 		private bool CheckIfAnyoneIsWaitingForMessage(IMessage m)
@@ -317,7 +322,7 @@ namespace Apollo.Mocks
 				while (true)
 				{
 					var queue = _service.GetQueue(queueType, _identifier);
-					SpinWait.SpinUntil(() => !isListening() || !queue.IsEmpty);
+					SpinWait.SpinUntil(() => _service.AsyncListeningExceptions.Count > 0 || !isListening() || !queue.IsEmpty);
 					if (!isListening())
 						break;
 					InvokeMessageHandlers(queueType, _service.Dequeue(queueType, _identifier), token);
@@ -414,8 +419,8 @@ namespace Apollo.Mocks
 				var calculatedTimeout = (timeout ?? message.TimeToLive);
 				if (calculatedTimeout > ApolloConstants.MaximumReplyWaitTime)
 					calculatedTimeout = ApolloConstants.MaximumReplyWaitTime;
-				calculatedTimeout = calculatedTimeout == TimeSpan.Zero
-					? TimeSpan.FromSeconds(10)
+				calculatedTimeout = calculatedTimeout > TimeSpan.FromSeconds(1)
+					? TimeSpan.FromSeconds(1)
 					: calculatedTimeout;
 				var job = new MessageWaitJob(DateTime.UtcNow + calculatedTimeout);
 				ReplyWaitList.TryAdd(message.Identifier, job);
@@ -427,7 +432,7 @@ namespace Apollo.Mocks
 						job.WaitHandle.Wait(calculatedTimeout, token.Value);
 					else
 						job.WaitHandle.Wait(calculatedTimeout);
-					if (ReplyWaitList.TryGetValue(message.Identifier, out var reply))
+					if (ReplyWaitList.TryGetValue(message.Identifier, out var reply) && reply.Message != null)
 					{
 						return reply.Message;
 					}

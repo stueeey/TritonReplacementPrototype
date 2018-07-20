@@ -1,14 +1,26 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 using Apollo.Common.Abstractions;
+using Xunit.Abstractions;
 
 namespace Apollo.Mocks
 {
-	public class MockService
+	public class MockService : IDisposable
 	{
+		private ITestOutputHelper _logger;
+		public MockService(ITestOutputHelper logger)
+		{
+			_logger = logger;
+			var headings = $"{"SENDER/RECIEVER".PadRight(18)}  <=>  {"MESSAGE".PadRight(7)} | {"QUEUE".PadRight(14)} | {"ADDRESSEE".PadRight(18)} | LABEL";
+			logger.WriteLine(headings);
+			logger.WriteLine(new string('-', headings.Length));
+		}
+
 		public int MessageCounter;
 
 		public Dictionary<ApolloQueue, ConcurrentQueue<IMessage>> NormalQueues = new Dictionary<ApolloQueue, ConcurrentQueue<IMessage>>
@@ -63,6 +75,19 @@ namespace Apollo.Mocks
 			return message;
 		}
 
+		public List<ExceptionDispatchInfo> AsyncListeningExceptions = new List<ExceptionDispatchInfo>();
+
 		public ManualResetEventSlim QueuesEmpty { get; } = new ManualResetEventSlim();
+
+		public event Action Disposed;
+		#region IDisposable
+
+		public void Dispose()
+		{
+			Disposed?.Invoke();
+			AsyncListeningExceptions.FirstOrDefault()?.Throw();
+		}
+
+		#endregion
 	}
 }
