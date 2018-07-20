@@ -53,7 +53,7 @@ namespace Apollo.Common.Plugins
 		    var response = await Communicator.WaitForReplyTo(message);
 		    if (response?.Label != ApolloConstants.PositiveAcknowledgement || !response.Properties.ContainsKey(AliasTokenKey))
 		    {
-			    Logger.Warn($"Failed to get ownership of {alias} ({response["Reason"] ?? "Unknown"})");
+				Logger.Warn($"Failed to get ownership of {alias} ({response?["Reason"] ?? "No response"})");
 			    return Guid.Empty;
 		    }
 		    Logger.Warn($"Successfully got ownership of {alias}");
@@ -74,7 +74,7 @@ namespace Apollo.Common.Plugins
 		    var response = await Communicator.WaitForReplyTo(message);
 		    if (response?.Label != ApolloConstants.PositiveAcknowledgement || !response.Properties.ContainsKey(AliasTokenKey))
 		    {
-			    Logger.Warn($"Failed to take ownership of {alias} ({response["Reason"] ?? "Unknown"})");
+			    Logger.Warn($"Failed to take ownership of {alias} ({response?["Reason"] ?? "No response"})");
 			    return Guid.Empty;
 		    }
 		    Logger.Warn($"Successfully took ownership of {alias}");
