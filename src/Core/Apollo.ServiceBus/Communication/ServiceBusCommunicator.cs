@@ -75,8 +75,10 @@ namespace Apollo.ServiceBus.Communication
 				}
 				if (status.HasFlag(MessageStatus.MarkedForDeletion))
 					await receiver.CompleteAsync(message.InnerMessage.SystemProperties.LockToken);
-				else
+				else if (string.IsNullOrWhiteSpace(message.ResponseTo))
 					await receiver.DeadLetterAsync(message.InnerMessage.SystemProperties.LockToken, $"{State[ApolloConstants.RegisteredAsKey]} does not have a plugin which can handle this message");
+				else
+					await receiver.DeadLetterAsync(message.InnerMessage.SystemProperties.LockToken, $"{State[ApolloConstants.RegisteredAsKey]} is not expecting or longer waiting for this response");
 			}
 			else
 				Debug.Assert(false, "Received a message without having any handlers!");

@@ -142,6 +142,17 @@ namespace Apollo.Common.Tests
 		}
 
 		[Fact(DisplayName = "As a client I want to be able to ping the server")]
+		public async Task Ping__ping_the_server_when_it_is_down()
+		{
+			using (var service = new MockService(_logger))
+			{
+				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
+				var result = await client1.GetPlugin<ClientCorePlugin>().PingServer();
+				result.Result.Should().Be(PingStats.PingResult.Timeout);
+			}
+		}
+
+		[Fact(DisplayName = "As a client I want to be able to ping the server")]
 		public async Task Ping__ping_a_client()
 		{
 			using (var service = new MockService(_logger))
@@ -156,6 +167,19 @@ namespace Apollo.Common.Tests
 				var result = await client1.GetPlugin<ClientCorePlugin>().PingClient(client2.Identifier);
 				result.Result.Should().Be(PingStats.PingResult.Success);
 				
+			}
+		}
+
+		[Fact(DisplayName = "As a client I want to be able to ping the server")]
+		public async Task Ping__ping_self()
+		{
+			using (var service = new MockService(_logger))
+			{
+				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
+
+				var result = await client1.GetPlugin<ClientCorePlugin>().PingClient(client1.Identifier);
+				result.Result.Should().Be(PingStats.PingResult.Success);
+
 			}
 		}
 	}

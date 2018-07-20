@@ -47,7 +47,7 @@ namespace Apollo.Mocks
 				AddHandler(queueType, systemMessageHandler);
 			if (logger != null)
 			{
-				AnyMessageSent += (m, q) => _logger.WriteLine($"{$"{(DateTime.UtcNow - _service.StartTimeUtc).TotalMilliseconds:N0} ms".PadRight(9)} | {_identifier.PadRight(18)}  ==>  {m.Identifier.PadRight(7)} | {q.ToString().PadRight(14)} | {(m.TargetSession ?? "").PadRight(18)} | {m.Label.PadRight(50)}");
+				AnyMessageSent += (m, q) => _logger.WriteLine($"{$"{(DateTime.UtcNow - _service.StartTimeUtc).TotalMilliseconds:N0} ms".PadRight(9)} | {_identifier.PadRight(18)}  ==>  {m.Identifier.PadRight(7)} | {q.ToString().PadRight(14)} | {(m.TargetSession ?? "").PadRight(18)} | {m.Label}");
 				AnyMessageReceived += (m, q) => _logger.WriteLine($"{$"{(DateTime.UtcNow - _service.StartTimeUtc).TotalMilliseconds:N0} ms".PadRight(9)} | {_identifier.PadRight(18)}  <==  {m.Identifier.PadRight(7)}");
 			}
 		}
