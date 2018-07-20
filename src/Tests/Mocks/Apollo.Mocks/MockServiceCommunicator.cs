@@ -36,6 +36,7 @@ namespace Apollo.Mocks
 
 		public MockServiceCommunicator(string identifier, MockService service, ITestOutputHelper logger = null)
 		{
+			State.TryAdd(ApolloConstants.RegisteredAsKey, identifier);
 			_logger = logger;
 			MessageFactory = new MockMessageFactory("ClientSessions", identifier, service);
 			_service = service;
@@ -46,8 +47,8 @@ namespace Apollo.Mocks
 				AddHandler(queueType, systemMessageHandler);
 			if (logger != null)
 			{
-				AnyMessageSent += (m, q) => _logger.WriteLine($"{_identifier.PadRight(18)}  ==>  {m.Identifier.PadRight(7)} | {q.ToString().PadRight(14)} | {(m.TargetSession ?? "").PadRight(18)} | {m.Label.PadRight(50)}");
-				AnyMessageReceived += (m, q) => _logger.WriteLine($"{_identifier.PadRight(18)}  <==  {m.Identifier.PadRight(7)}");
+				AnyMessageSent += (m, q) => _logger.WriteLine($"{$"{(DateTime.UtcNow - _service.StartTimeUtc).TotalMilliseconds:N0} ms".PadRight(9)} | {_identifier.PadRight(18)}  ==>  {m.Identifier.PadRight(7)} | {q.ToString().PadRight(14)} | {(m.TargetSession ?? "").PadRight(18)} | {m.Label.PadRight(50)}");
+				AnyMessageReceived += (m, q) => _logger.WriteLine($"{$"{(DateTime.UtcNow - _service.StartTimeUtc).TotalMilliseconds:N0} ms".PadRight(9)} | {_identifier.PadRight(18)}  <==  {m.Identifier.PadRight(7)}");
 			}
 		}
 
@@ -165,13 +166,11 @@ namespace Apollo.Mocks
 			AnyMessageReceived?.Invoke(message, queue);
 		}
 
-		public Task SendToClientAsync(IMessage message, CancellationToken? token = null)
+		public async Task SendToClientAsync(IMessage message, CancellationToken? token = null)
 		{
-			return Task.Run(() =>
-			{
-				OnMessageSent(message, ApolloQueue.ClientSessions);
-				_service.Enqueue(message, ApolloQueue.ClientSessions, message.TargetSession);
-			});
+			await Task.Delay(10);
+			OnMessageSent(message, ApolloQueue.ClientSessions);
+			_service.Enqueue(message, ApolloQueue.ClientSessions, message.TargetSession);
 		}
 
 		public async Task SendToClientAsync(CancellationToken? token, params IMessage[] messages)
@@ -185,13 +184,11 @@ namespace Apollo.Mocks
 			await SendToClientAsync(null, messages);
 		}
 
-		public Task SendToServerAsync(IMessage message, CancellationToken? token = null)
+		public async Task SendToServerAsync(IMessage message, CancellationToken? token = null)
 		{
-			return Task.Run(() =>
-			{
-				OnMessageSent(message, ApolloQueue.ServerRequests);
-				_service.Enqueue(message, ApolloQueue.ServerRequests, null);
-			});
+			await Task.Delay(10);
+			OnMessageSent(message, ApolloQueue.ServerRequests);
+			_service.Enqueue(message, ApolloQueue.ServerRequests, null);
 		}
 
 		public async Task SendToServerAsync(CancellationToken? token, params IMessage[] messages)
@@ -205,13 +202,11 @@ namespace Apollo.Mocks
 			await SendToServerAsync(null, messages);
 		}
 
-		public Task SendRegistrationMessageAsync(IMessage message, CancellationToken? token = null)
+		public async Task SendRegistrationMessageAsync(IMessage message, CancellationToken? token = null)
 		{
-			return Task.Run(() =>
-			{
-				OnMessageSent(message, ApolloQueue.Registrations);
-				_service.Enqueue(message, ApolloQueue.Registrations, null);
-			});
+			await Task.Delay(10);
+			OnMessageSent(message, ApolloQueue.Registrations);
+			_service.Enqueue(message, ApolloQueue.Registrations, null);
 		}
 
 		public async Task SendRegistrationMessageAsync(CancellationToken? token, params IMessage[] messages)
@@ -225,11 +220,12 @@ namespace Apollo.Mocks
 			await SendRegistrationMessageAsync(null, messages);
 		}
 
-		public Task SendToAliasAsync(string alias, IMessage message, CancellationToken? token = null)
+		public async Task SendToAliasAsync(string alias, IMessage message, CancellationToken? token = null)
 		{
+			await Task.Delay(10);
 			message.Properties[ApolloConstants.TargetAliasKey] = alias;
 			OnMessageSent(message, ApolloQueue.Aliases);
-			return Task.Run(() => _service.Enqueue(message, ApolloQueue.Aliases, null));
+			_service.Enqueue(message, ApolloQueue.Aliases, null);
 		}
 
 		public async Task SendToAliasAsync(string alias, CancellationToken? token, params IMessage[] messages)
@@ -270,7 +266,8 @@ namespace Apollo.Mocks
 							throw;
 						}
 					}
-
+					if (message.Label == ApolloConstants.PositiveAcknowledgement || message.Label == ApolloConstants.NegativeAcknowledgement)
+						return;
 					if (status == MessageStatus.Unhandled)
 						throw new Exception($"{_identifier} received a message from {queue} with label '{message.Label}' which no handler could handle");
 					if (!status.HasFlag(MessageStatus.MarkedForDeletion))
@@ -296,7 +293,7 @@ namespace Apollo.Mocks
 			return true;
 		}
 
-		private CancellationTokenSource _listenForClientMessagesCancelToken;
+		void OnClientMessageArrived() => InvokeMessageHandlers(ApolloQueue.ClientSessions, _service.Dequeue(ApolloQueue.ClientSessions, _identifier), null);
 		public bool ListeningForClientSessionMessages
 		{
 			get => _listeningForClientSessionMessages;
@@ -305,13 +302,11 @@ namespace Apollo.Mocks
 				if (_listeningForClientSessionMessages == value)
 					return;
 				_listeningForClientSessionMessages = value;
+				
 				if (value)
-				{
-					_listenForClientMessagesCancelToken = new CancellationTokenSource();
-					StartListening(ApolloQueue.ClientSessions, _listenForClientMessagesCancelToken.Token, () => ListeningForClientSessionMessages);
-				}
+					_service.GetQueue(ApolloQueue.ClientSessions, _identifier).MessageArrived += OnClientMessageArrived;
 				else
-					_listenForClientMessagesCancelToken?.Cancel();
+					_service.GetQueue(ApolloQueue.ClientSessions, _identifier).MessageArrived -= OnClientMessageArrived;
 			}
 		}
 
@@ -325,12 +320,12 @@ namespace Apollo.Mocks
 					SpinWait.SpinUntil(() => _service.AsyncListeningExceptions.Count > 0 || !isListening() || !queue.IsEmpty);
 					if (!isListening())
 						break;
-					InvokeMessageHandlers(queueType, _service.Dequeue(queueType, _identifier), token);
+					
 				}
 			}, token);
 		}
 
-		private CancellationTokenSource _listenForRegistrationMessagesCancelToken;
+		void OnRegistrationMessageArrived() => InvokeMessageHandlers(ApolloQueue.Registrations, _service.Dequeue(ApolloQueue.Registrations, _identifier), null);
 		public bool ListeningForRegistrations
 		{
 			get => _listeningForRegistrations;
@@ -340,16 +335,13 @@ namespace Apollo.Mocks
 					return;
 				_listeningForRegistrations = value;
 				if (value)
-				{
-					_listenForRegistrationMessagesCancelToken = new CancellationTokenSource();
-					StartListening(ApolloQueue.Registrations, _listenForRegistrationMessagesCancelToken.Token, () => ListeningForRegistrations);
-				}
+					_service.GetQueue(ApolloQueue.Registrations, _identifier).MessageArrived += OnRegistrationMessageArrived;
 				else
-					_listenForRegistrationMessagesCancelToken?.Cancel();
+					_service.GetQueue(ApolloQueue.Registrations, _identifier).MessageArrived -= OnRegistrationMessageArrived;
 			}
 		}
 
-		private CancellationTokenSource _listenForServerMessagesCancelToken;
+		void OnServerMessageArrived() => InvokeMessageHandlers(ApolloQueue.ServerRequests, _service.Dequeue(ApolloQueue.ServerRequests, _identifier), null);
 		public bool ListeningForServerJobs
 		{
 			get => _listeningForServerJobs;
@@ -359,16 +351,13 @@ namespace Apollo.Mocks
 					return;
 				_listeningForServerJobs = value;
 				if (value)
-				{
-					_listenForServerMessagesCancelToken = new CancellationTokenSource();
-					StartListening(ApolloQueue.ServerRequests, _listenForServerMessagesCancelToken.Token, () => ListeningForServerJobs);
-				}
+					_service.GetQueue(ApolloQueue.ServerRequests, _identifier).MessageArrived += OnServerMessageArrived;
 				else
-					_listenForServerMessagesCancelToken?.Cancel();
+					_service.GetQueue(ApolloQueue.ServerRequests, _identifier).MessageArrived -= OnServerMessageArrived;
 			}
 		}
 
-		private CancellationTokenSource _listenForAliasMessagesCancelToken;
+		void OnAliasMessageArrived() => InvokeMessageHandlers(ApolloQueue.Aliases, _service.Dequeue(ApolloQueue.Aliases, _identifier), null);
 		public bool ListeningForAliasMessages
 		{
 			get => _listeningForAliasMessages;
@@ -378,12 +367,9 @@ namespace Apollo.Mocks
 					return;
 				_listeningForAliasMessages = value;
 				if (value)
-				{
-					_listenForAliasMessagesCancelToken = new CancellationTokenSource();
-					StartListening(ApolloQueue.Aliases, _listenForAliasMessagesCancelToken.Token, () => ListeningForAliasMessages);
-				}
+					_service.GetQueue(ApolloQueue.Aliases, _identifier).MessageArrived += OnAliasMessageArrived;
 				else
-					_listenForAliasMessagesCancelToken?.Cancel();
+					_service.GetQueue(ApolloQueue.Aliases, _identifier).MessageArrived -= OnAliasMessageArrived;
 			}
 		}
 
@@ -416,26 +402,18 @@ namespace Apollo.Mocks
 				if (message == null)
 					throw new ArgumentNullException(nameof(message));
 				var replyQueue = GetReplyQueueForMessage(message) ?? throw new ArgumentException($"Cannot wait for a reply to a message which does not have a valid {nameof(IMessage.ReplyToEntity)}");
-				var calculatedTimeout = (timeout ?? message.TimeToLive);
-				if (calculatedTimeout > ApolloConstants.MaximumReplyWaitTime)
-					calculatedTimeout = ApolloConstants.MaximumReplyWaitTime;
-				calculatedTimeout = calculatedTimeout > TimeSpan.FromSeconds(1)
-					? TimeSpan.FromSeconds(1)
-					: calculatedTimeout;
-				var job = new MessageWaitJob(DateTime.UtcNow + calculatedTimeout);
+				var job = new MessageWaitJob(DateTime.UtcNow + TimeSpan.FromSeconds(5));
 				ReplyWaitList.TryAdd(message.Identifier, job);
 				var replyHandlerToForceListening = MessageHandler.CreateFakeHandler();
 				AddHandler(replyQueue, replyHandlerToForceListening);
 				try
 				{
 					if (token.HasValue)
-						job.WaitHandle.Wait(calculatedTimeout, token.Value);
+						job.WaitHandle.Wait(TimeSpan.FromSeconds(5), token.Value);
 					else
-						job.WaitHandle.Wait(calculatedTimeout);
+						job.WaitHandle.Wait(TimeSpan.FromSeconds(5));
 					if (ReplyWaitList.TryGetValue(message.Identifier, out var reply) && reply.Message != null)
-					{
 						return reply.Message;
-					}
 					else
 					{
 						_logger?.WriteLine($"No response to {message.Identifier}");

@@ -10,44 +10,56 @@ using Xunit.Abstractions;
 
 namespace Apollo.Mocks
 {
+	public class MockQueue : ConcurrentQueue<IMessage>
+	{
+		public Action MessageArrived { get; set; }
+
+		public void SignalMessageArrived()
+		{
+			MessageArrived?.Invoke();
+		}
+	}
+
 	public class MockService : IDisposable
 	{
 		private ITestOutputHelper _logger;
+		public DateTime StartTimeUtc { get; } = DateTime.UtcNow;
+
 		public MockService(ITestOutputHelper logger)
 		{
 			_logger = logger;
-			var headings = $"{"SENDER/RECIEVER".PadRight(18)}  <=>  {"MESSAGE".PadRight(7)} | {"QUEUE".PadRight(14)} | {"ADDRESSEE".PadRight(18)} | LABEL";
+			var headings = $"{"Time".PadRight(9)} | {"SENDER/RECIEVER".PadRight(18)}  <=>  {"MESSAGE".PadRight(7)} | {"QUEUE".PadRight(14)} | {"ADDRESSEE".PadRight(18)} | LABEL";
 			logger.WriteLine(headings);
 			logger.WriteLine(new string('-', headings.Length));
 		}
 
 		public int MessageCounter;
 
-		public Dictionary<ApolloQueue, ConcurrentQueue<IMessage>> NormalQueues = new Dictionary<ApolloQueue, ConcurrentQueue<IMessage>>
+		public Dictionary<ApolloQueue, MockQueue> NormalQueues = new Dictionary<ApolloQueue, MockQueue>
 		{
-			{ ApolloQueue.Aliases, new ConcurrentQueue<IMessage>() },
-			{ ApolloQueue.Registrations, new ConcurrentQueue<IMessage>() },
-			{ ApolloQueue.ServerRequests, new ConcurrentQueue<IMessage>() }
+			{ ApolloQueue.Aliases, new MockQueue() },
+			{ ApolloQueue.Registrations, new MockQueue() },
+			{ ApolloQueue.ServerRequests, new MockQueue() }
 		};
 
-		public Dictionary<ApolloQueue, ConcurrentDictionary<string, ConcurrentQueue<IMessage>>> SessionQueues = new Dictionary<ApolloQueue, ConcurrentDictionary<string, ConcurrentQueue<IMessage>>>()
+		public Dictionary<ApolloQueue, ConcurrentDictionary<string, MockQueue>> SessionQueues = new Dictionary<ApolloQueue, ConcurrentDictionary<string, MockQueue>>()
 		{
-			{ ApolloQueue.ClientSessions, new ConcurrentDictionary<string, ConcurrentQueue<IMessage>>(StringComparer.OrdinalIgnoreCase) }
+			{ ApolloQueue.ClientSessions, new ConcurrentDictionary<string, MockQueue>(StringComparer.OrdinalIgnoreCase) }
 		};
 
 		private int _pendingMessages;
 
-		public ConcurrentQueue<IMessage> GetQueue(ApolloQueue queueType, string targetSession)
+		public MockQueue GetQueue(ApolloQueue queueType, string targetSession)
 		{
 			return !NormalQueues.TryGetValue(queueType, out var queue) 
 				? GetSessionQueue(queueType, targetSession) 
 				: queue;
 		}
 
-		private ConcurrentQueue<IMessage> GetSessionQueue(ApolloQueue queueType, string identifier)
+		private MockQueue GetSessionQueue(ApolloQueue queueType, string identifier)
 		{
 			return SessionQueues.TryGetValue(queueType, out var queue) 
-				? queue.GetOrAdd(identifier, new ConcurrentQueue<IMessage>()) 
+				? queue.GetOrAdd(identifier, new MockQueue()) 
 				: null;
 		}
 
@@ -59,10 +71,13 @@ namespace Apollo.Mocks
 
 		public void Enqueue(IMessage message, ApolloQueue queueType, string session)
 		{
-			GetQueue(queueType, session).Enqueue(message);
+			var queue = GetQueue(queueType, session);
+			queue.Enqueue(message);
+			queue.SignalMessageArrived();
 			Interlocked.Increment(ref _pendingMessages);
 			if (_pendingMessages != 0)
 				QueuesEmpty.Reset();
+
 		}
 
 		public IMessage Dequeue(ApolloQueue queueType, string session)

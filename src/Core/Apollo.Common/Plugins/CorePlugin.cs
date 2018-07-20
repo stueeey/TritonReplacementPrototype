@@ -8,18 +8,17 @@ namespace Apollo.Common.Plugins
 {
     public abstract class CorePlugin : ApolloPluginBase
     {
-		private const string pingResponse = "Ping Response";
-		private const string ping = "Ping";
+		private const string PingLabel = "Ping";
 		protected MessageHandler PingHandler;
 
 		protected CorePlugin()
 		{
-			PingHandler = new MessageHandler(this, ping, HandlePing);
+			PingHandler = new MessageHandler(this, PingLabel, HandlePing);
 		}
 
 	    protected virtual MessageStatus HandlePing(ApolloQueue targetQueue, IMessage message, CancellationToken? token)
 	    {
-			var response = MessageFactory.CreateReply(message, pingResponse);
+			var response = MessageFactory.CreateAcknowledgment(message);
 			response[nameof(PingStats.ServedBy)] = Communicator.GetState<string>(ApolloConstants.RegisteredAsKey);
 			response[nameof(PingStats.TimeRequestEnqueuedUtc)] = message.EnqueuedTimeUtc;
 			Communicator.SendToClientAsync(response);
@@ -42,7 +41,7 @@ namespace Apollo.Common.Plugins
 
 	    public Task<PingStats> PingAlias(string alias, TimeSpan? timeOut = null, CancellationToken? cancellationToken = null)
 	    {
-		    return SendPingMessage(timeOut, cancellationToken, (m) => Communicator.SendToAliasAsync(alias, m));
+		    return SendPingMessage(timeOut, cancellationToken, m => Communicator.SendToAliasAsync(alias, m));
 	    }
 
 	    private async Task<PingStats> SendPingMessage(TimeSpan? timeOut, CancellationToken? cancellationToken, Func<IMessage, Task> sendMessage)
@@ -50,7 +49,7 @@ namespace Apollo.Common.Plugins
 		    var retVal = new PingStats();
 		    try
 		    {
-			    var message = MessageFactory.CreateNewMessage(ping);
+			    var message = MessageFactory.CreateNewMessage(PingLabel);
 			    var startTime = DateTime.UtcNow;
 			    message.TimeToLive = timeOut ?? TimeSpan.FromSeconds(30);
 			    await sendMessage(message);
@@ -60,7 +59,7 @@ namespace Apollo.Common.Plugins
 				    case ApolloConstants.NegativeAcknowledgement:
 					    retVal.Result = PingStats.PingResult.AddresseeNotFound;
 					    break;
-				    case pingResponse:
+				    case ApolloConstants.PositiveAcknowledgement:
 					    retVal.RoundTripTime = DateTime.UtcNow - startTime;
 					    retVal.TimeResponseEnqueuedUtc = response.EnqueuedTimeUtc;
 					    retVal.TimeRequestEnqueuedUtc = (DateTime) (response[nameof(PingStats.TimeRequestEnqueuedUtc)] ?? DateTime.MinValue);

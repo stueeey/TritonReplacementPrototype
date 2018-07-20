@@ -11,7 +11,7 @@ namespace Apollo.Common.Tests
 {
 	public class CorePluginTests
 	{
-		private ITestOutputHelper _logger;
+		private readonly ITestOutputHelper _logger;
 		public CorePluginTests(ITestOutputHelper logger)
 		{
 			_logger = logger;
@@ -41,7 +41,7 @@ namespace Apollo.Common.Tests
 				var serverStorage = new InMemoryRegistrationStorage();
 				var client = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
-				await client.RegisterAsync();
+				(await client.RegisterAsync()).Should().NotBeNullOrEmpty();
 				(await client.RequestOwnershipOfAliasAsync("UK123", uk123Token)).Should().Be(uk123Token);
 			}
 		}
@@ -56,10 +56,11 @@ namespace Apollo.Common.Tests
 				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var client2 = new ApolloClient(new MockServiceCommunicator("Client2", service, _logger));
 				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
-				await client1.RegisterAsync();
-				await client2.RegisterAsync();
-				(await client1.RequestOwnershipOfAliasAsync("UK123", uk123Token)).Should().Be(uk123Token);
-				(await client2.RequestOwnershipOfAliasAsync("UK123", Guid.NewGuid())).Should().Be(Guid.Empty);
+				(await client1.RegisterAsync()).Should().NotBeNullOrEmpty();
+				(await client2.RegisterAsync()).Should().NotBeNullOrEmpty();
+
+				(await client1.RequestOwnershipOfAliasAsync("UK123", uk123Token)).Should().Be(uk123Token, "client 1 was the first to request ownership of UK123");
+				(await client2.RequestOwnershipOfAliasAsync("UK123", Guid.NewGuid())).Should().Be(Guid.Empty, "client 1 already owns UK123");
 			}
 		}
 
@@ -68,17 +69,93 @@ namespace Apollo.Common.Tests
 		{
 			var client1Token = Guid.NewGuid();
 			var client2Token = Guid.NewGuid();
+			var practiceId = "UK123";
 			using (var service = new MockService(_logger))
 			{
 				var serverStorage = new InMemoryRegistrationStorage();
 				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var client2 = new ApolloClient(new MockServiceCommunicator("Client2", service, _logger));
 				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
-				await client1.RegisterAsync();
-				await client2.RegisterAsync();
-				(await client1.RequestOwnershipOfAliasAsync("UK123", client1Token)).Should().Be(client1Token);
-				(await client2.RequestOwnershipOfAliasAsync("UK123", client2Token)).Should().Be(Guid.Empty);
-				(await client2.TakeOwnershipOfAliasAsync("UK123", client2Token)).Should().Be(client2Token);
+				(await client1.RegisterAsync()).Should().NotBeNullOrEmpty();
+				(await client2.RegisterAsync()).Should().NotBeNullOrEmpty();
+
+				(await client1.RequestOwnershipOfAliasAsync(practiceId, client1Token)).Should().Be(client1Token, "client 1 was the first to request ownership of UK123");
+				(await client2.RequestOwnershipOfAliasAsync(practiceId, client2Token)).Should().Be(Guid.Empty, "client 1 already owns UK123");
+				(await client2.DemandOwnershipOfAliasAsync(practiceId, client2Token)).Should().Be(client2Token, "client 2 should be able to steal ownership of UK123");
+				(await client1.RequestOwnershipOfAliasAsync(practiceId, client1Token)).Should().Be(Guid.Empty, "client 1 no longer owns UK123");
+				(await client2.RequestOwnershipOfAliasAsync(practiceId, client2Token)).Should().Be(client2Token, "client 2 now owns UK123");
+			}
+		}
+
+		[Fact(DisplayName = "Given that a client owns an alias, I should be able to ping them via that alias")]
+		public async Task Ping__ping_an_alias()
+		{
+			var client1Token = Guid.NewGuid();
+			var practiceId = "UK123";
+			using (var service = new MockService(_logger))
+			{
+				var serverStorage = new InMemoryRegistrationStorage();
+				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
+				var client2 = new ApolloClient(new MockServiceCommunicator("Client2", service, _logger));
+				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
+				(await client1.RegisterAsync()).Should().NotBeNullOrEmpty();
+				(await client2.RegisterAsync()).Should().NotBeNullOrEmpty();
+
+				(await client1.RequestOwnershipOfAliasAsync(practiceId, client1Token)).Should().Be(client1Token, "client 1 was the first to request ownership of UK123");
+
+				var result = (await client1.GetPlugin<ClientCorePlugin>().PingAlias(practiceId));
+				result.Result.Should().Be(PingStats.PingResult.Success);
+			}
+		}
+
+		[Fact(DisplayName = "Given that no client owns an alias, I should be told that I cannot ping that alias")]
+		public async Task Ping__ping_an_unowned_alias()
+		{
+			var practiceId = "UK123";
+			using (var service = new MockService(_logger))
+			{
+				var serverStorage = new InMemoryRegistrationStorage();
+				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
+				var client2 = new ApolloClient(new MockServiceCommunicator("Client2", service, _logger));
+				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
+				(await client1.RegisterAsync()).Should().NotBeNullOrEmpty();
+				(await client2.RegisterAsync()).Should().NotBeNullOrEmpty();
+
+				var result = (await client1.GetPlugin<ClientCorePlugin>().PingAlias(practiceId));
+				result.Result.Should().Be(PingStats.PingResult.AddresseeNotFound);
+			}
+		}
+
+		[Fact(DisplayName = "As a client I want to be able to ping the server")]
+		public async Task Ping__ping_the_server()
+		{
+			using (var service = new MockService(_logger))
+			{
+				var serverStorage = new InMemoryRegistrationStorage();
+				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
+				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
+				(await client1.RegisterAsync()).Should().NotBeNullOrEmpty();
+
+				var result = await client1.GetPlugin<ClientCorePlugin>().PingServer();
+				result.Result.Should().Be(PingStats.PingResult.Success);
+			}
+		}
+
+		[Fact(DisplayName = "As a client I want to be able to ping the server")]
+		public async Task Ping__ping_a_client()
+		{
+			using (var service = new MockService(_logger))
+			{
+				var serverStorage = new InMemoryRegistrationStorage();
+				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
+				var client2 = new ApolloClient(new MockServiceCommunicator("Client2", service, _logger));
+				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
+				(await client1.RegisterAsync()).Should().NotBeNullOrEmpty();
+				(await client2.RegisterAsync()).Should().NotBeNullOrEmpty();
+
+				var result = await client1.GetPlugin<ClientCorePlugin>().PingClient(client2.Identifier);
+				result.Result.Should().Be(PingStats.PingResult.Success);
+				
 			}
 		}
 	}

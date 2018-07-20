@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Apollo.Common.Abstractions;
+using log4net;
 
 namespace Apollo.Common.Infrastructure
 {
@@ -19,6 +20,17 @@ namespace Apollo.Common.Infrastructure
 			    return Plugins.ContainsKey(typeOfT)
 				    ? (T) Plugins[typeOfT]
 				    : (T) Plugins.FirstOrDefault(p => p.Key.IsInstanceOfType(typeOfT)).Value;
+		    }
+	    }
+
+	    private ILog _overrideLogger;
+	    public ILog OverrideLogger
+	    {
+		    set
+		    {
+			    _overrideLogger = value;
+			    foreach (var plugin in Plugins)
+				    plugin.Value.SetLogger(value);
 		    }
 	    }
 
@@ -41,6 +53,8 @@ namespace Apollo.Common.Infrastructure
 			    {
 				    Plugins.Add(plugin.GetType(), plugin);
 				    plugin.SetCommunicator(Communicator);
+				    if (_overrideLogger != null)
+					    plugin.SetLogger(_overrideLogger);
 			    }
 		    }
 	    }

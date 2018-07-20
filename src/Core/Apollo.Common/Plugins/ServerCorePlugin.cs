@@ -12,8 +12,9 @@ namespace Apollo.Common.Plugins
     {
 		private const string DesiredAliasKey = "Desired Alias";
 		private const string AliasTokenKey = "Alias Token";
+
 		private const string RequestOwnershipLabel = "Request Alias Ownership";
-		private const string ClaimOwnershipLabel = "Claim Alias Ownership";
+	    private const string TakeAliasLabel = "Demand Alias Ownership";
 		private readonly IRegistrationStorage _storage;
 	    public ServerCorePlugin(IRegistrationStorage storage)
 	    {
@@ -25,7 +26,7 @@ namespace Apollo.Common.Plugins
 			await base.OnInitialized();
 			Communicator.AddHandler(ApolloQueue.Registrations, new MessageHandler(this, ApolloConstants.RegistrationKey, OnRegistrationReceived));
 			Communicator.AddHandler(ApolloQueue.Registrations, new MessageHandler(this, RequestOwnershipLabel, AliasOwnershipRequestReceived));
-			Communicator.AddHandler(ApolloQueue.Registrations, new MessageHandler(this, ClaimOwnershipLabel, AliasOwnershipClaimReceived, OnClaimOwnershipError));
+			Communicator.AddHandler(ApolloQueue.Registrations, new MessageHandler(this, TakeAliasLabel, AliasOwnershipClaimReceived, OnClaimOwnershipError));
 			Communicator.AddHandler(ApolloQueue.Aliases, new MessageHandler(this, ForwardAliasMessage));
 			Communicator.AddHandler(ApolloQueue.ServerRequests, PingHandler);
 			Communicator.AddHandler(ApolloQueue.ClientSessions, PingHandler);
@@ -77,7 +78,7 @@ namespace Apollo.Common.Plugins
 			if (oldOwner != null)
 			{
 				var lostOwnershipMessage = MessageFactory.CreateNewMessage("Lost Alias Ownership");
-				lostOwnershipMessage.TargetSession = oldOwner.ToString();
+				lostOwnershipMessage.TargetSession = oldOwner;
 				lostOwnershipMessage[DesiredAliasKey] = m.GetStringProperty(DesiredAliasKey);
 				Communicator.SendToClientAsync(lostOwnershipMessage);
 			}

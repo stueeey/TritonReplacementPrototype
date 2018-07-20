@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
@@ -10,17 +11,32 @@ namespace Apollo.Common.Plugins
     {
 		private const string DesiredAliasKey = "Desired Alias";
 		private const string AliasTokenKey = "Alias Token";
+
 		private const string RegisteredEventName = "Registered";
-		private const string RequestAliasKey = "Request Alias Ownership";
-	    private const string TakeAliasKey = "Take Alias Ownership";
+
+		private const string RequestOwnershipLabel = "Request Alias Ownership";
+	    private const string DemandAliasLabel = "Demand Alias Ownership";
+	    private const string LostOwnershipLabel = "Lost Alias Ownership";
 
 		protected override async Task OnInitialized()
 		{
 			await base.OnInitialized();
 			Communicator.AddHandler(ApolloQueue.ClientSessions, PingHandler);
+			Communicator.AddHandler(ApolloQueue.ClientSessions, new MessageHandler(this, LostOwnershipLabel, LostOwnershipNotificationReceived));
 		}
 
+	    public event Action<string> LostOwnershipOfAlias;
 
+	    private MessageStatus LostOwnershipNotificationReceived(ApolloQueue queue, IMessage m, CancellationToken? cancelToken)
+	    {
+		    var alias = m.GetStringProperty(DesiredAliasKey);
+		    if (!string.IsNullOrWhiteSpace(alias))
+		    {
+			    Logger.Warn($"Lost ownership of alias '{alias}'");
+			    LostOwnershipOfAlias?.Invoke(alias);
+		    }
+		    return MessageStatus.Complete;
+	    }
 
 		public async Task<string> RegisterAsync(IDictionary<string, string> metadata = null, TimeSpan? timeOut = null)
 	    {
@@ -45,7 +61,7 @@ namespace Apollo.Common.Plugins
 	    public async Task<Guid> RequestOwnershipOfAliasAsync(string alias, Guid token)
 	    {
 		    Logger.Info($"Requesting ownership of alias '{alias}'");
-		    var message = MessageFactory.CreateNewMessage(RequestAliasKey);
+		    var message = MessageFactory.CreateNewMessage(RequestOwnershipLabel);
 		    message.Properties[DesiredAliasKey] = alias;
 		    message.Properties[AliasTokenKey] = token.ToString();
 		    message.TimeToLive = TimeSpan.FromSeconds(30);
@@ -63,10 +79,10 @@ namespace Apollo.Common.Plugins
 	    }
 
 
-	    public async Task<Guid> TakeOwnershipOfAliasAsync(string alias, Guid token)
+	    public async Task<Guid> DemandOwnershipOfAliasAsync(string alias, Guid token)
 	    {
 		    Logger.Info($"Taking ownership of alias '{alias}'");
-		    var message = MessageFactory.CreateNewMessage(TakeAliasKey);
+		    var message = MessageFactory.CreateNewMessage(DemandAliasLabel);
 		    message.Properties[DesiredAliasKey] = alias;
 		    message.Properties[AliasTokenKey] = token.ToString();
 		    message.TimeToLive = TimeSpan.FromSeconds(30);
