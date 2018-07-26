@@ -20,6 +20,7 @@ namespace Apollo.ServerWorker.Controllers
 		    public bool ListeningForRegistrationRequests { get; set; }
 		    public bool ListeningForAliasMessages { get; set; }
 		    public bool ListeningForClientSessionMessages { get; set; }
+		    public string[] Plugins { get; set; }
 		    public KeyValuePair<string, object>[] State { get; set; }
 		    public TimeSpan Uptime { get;set; }
 	    }
@@ -42,6 +43,7 @@ namespace Apollo.ServerWorker.Controllers
 		        ListeningForRegistrationRequests = _server.Communicator.ListeningForRegistrations,
 		        ListeningForAliasMessages = _server.Communicator.ListeningForAliasMessages,
 		        ListeningForClientSessionMessages = _server.Communicator.ListeningForClientSessionMessages,
+				Plugins = _server.GetPlugins().Select(p => p.GetType().Name).ToArray(),
 		        State = _server.Communicator.State.OrderBy(e => e.Key).ToArray(),
 		        Uptime = DateTime.Now - Process.GetCurrentProcess().StartTime
 		        

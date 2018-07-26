@@ -26,12 +26,12 @@ namespace Apollo.ServiceBus.Communication
 			}
 
 			public ManualResetEventSlim WaitHandle { get; } = new ManualResetEventSlim();
-			public IMessage Message { get; set; }
+			public List<IMessage> Messages { get; set; }
 			public DateTime StartTimeUtc { get; } = DateTime.UtcNow;
 			public DateTime ExpiryTimeUtc { get; set; }
 		}
 
-		private IDictionary<ApolloQueue, ICollection<MessageHandler>> Handlers = new Dictionary<ApolloQueue, ICollection<MessageHandler>>();
+		private readonly IDictionary<ApolloQueue, ICollection<MessageHandler>> _handlers = new Dictionary<ApolloQueue, ICollection<MessageHandler>>();
 
 		private static readonly ILog ClassLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{ApolloConstants.LoggerInternalsPrefix}.{MethodBase.GetCurrentMethod().DeclaringType.Name}");
 		private static readonly ILog TraceLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{ApolloConstants.LoggerInternalsPrefix}.Tracing");
@@ -55,7 +55,7 @@ namespace Apollo.ServiceBus.Communication
 			if (message == null)
 				return;
 
-			if (Handlers.TryGetValue(queue, out var handlers))
+			if (_handlers.TryGetValue(queue, out var handlers))
 			{
 				var status = MessageStatus.Unhandled;
 				foreach (var handler in handlers.Where(h => h.PassesFilter(message)))
@@ -86,7 +86,7 @@ namespace Apollo.ServiceBus.Communication
 		{
 			if (string.IsNullOrEmpty(m.ResponseTo) || !ReplyWaitList.TryGetValue(m.ResponseTo, out var job)) 
 				return false;
-			job.Message = m;
+			job.Messages.Add(m);
 			job.WaitHandle.Set();
 			return true;
 		}
@@ -177,7 +177,7 @@ namespace Apollo.ServiceBus.Communication
 
 		public void RemoveListenersForPlugin(ApolloPluginBase plugin)
 		{
-			foreach (var queueType in Handlers)
+			foreach (var queueType in _handlers)
 			{
 				foreach (var itemToRemove in queueType.Value.Where(h => h.Plugin == plugin).ToArray())
 					RemoveHandler(queueType.Key, itemToRemove);
@@ -239,6 +239,12 @@ namespace Apollo.ServiceBus.Communication
 
 		public Task<IMessage> WaitForReplyTo(IMessage message, CancellationToken? token = null, TimeSpan? timeout = null)
 		{
+			
+			
+		}
+
+		public Task<List<IMessage>> WaitForRepliesTo(IMessage message, CancellationToken? token = null, TimeSpan? timeout = null, Predicate<IMessage> shouldStopWaiting = null)
+		{
 			return Task.Run(() =>
 			{
 				if (message == null)
@@ -261,7 +267,7 @@ namespace Apollo.ServiceBus.Communication
 					else
 						job.WaitHandle.Wait(calculatedTimeout);
 					return ReplyWaitList.TryGetValue(message.Identifier, out var reply)
-						? reply.Message
+						? reply.Messages
 						: null;
 				}
 				catch (Exception ex)
@@ -275,7 +281,6 @@ namespace Apollo.ServiceBus.Communication
 				}
 				return null;
 			});
-			
 		}
 
 		private ApolloQueue? GetReplyQueueForMessage(IMessage message)
@@ -295,13 +300,13 @@ namespace Apollo.ServiceBus.Communication
 		{
 			if (handler == null)
 				throw new ArgumentNullException(nameof(handler));
-			lock (Handlers)
+			lock (_handlers)
 			{
-				if (Handlers.ContainsKey(queueType))
-					Handlers[queueType].Add(handler);
+				if (_handlers.ContainsKey(queueType))
+					_handlers[queueType].Add(handler);
 				else
-					Handlers.Add(queueType, new List<MessageHandler> { handler });
-				if (Handlers[queueType].Count > 1)
+					_handlers.Add(queueType, new List<MessageHandler> { handler });
+				if (_handlers[queueType].Count > 1)
 					ListenToQueue(queueType, true);
 			}
 		}
@@ -310,14 +315,14 @@ namespace Apollo.ServiceBus.Communication
 		{
 			if (handler == null)
 				throw new ArgumentNullException(nameof(handler));
-			lock (Handlers)
+			lock (_handlers)
 			{
-				if (!Handlers.ContainsKey(queueType))
+				if (!_handlers.ContainsKey(queueType))
 					return;
-				Handlers[queueType].Remove(handler);
-				if (!Handlers[queueType].Any())
-					Handlers.Remove(queueType);
-				else if (Handlers[queueType].Count <= 1)
+				_handlers[queueType].Remove(handler);
+				if (!_handlers[queueType].Any())
+					_handlers.Remove(queueType);
+				else if (_handlers[queueType].Count <= 1)
 					ListenToQueue(queueType, false);
 			}
 		}

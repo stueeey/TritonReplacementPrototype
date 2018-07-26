@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
@@ -20,12 +21,12 @@ namespace Apollo.Common
 			    LoadPlugins(new ClientCorePlugin());
 	    }
 
-	    public ApolloClient(IServiceCommunicator communicator, params ApolloPluginBase[] ApolloPluginsBase) : base(communicator, ApolloPluginsBase)
+	    public ApolloClient(IServiceCommunicator communicator, params ApolloPluginBase[] apolloPluginsBase) : base(communicator, apolloPluginsBase)
 	    {
 		    LoadCorePlugin();
 	    }
 
-	    public ApolloClient(IServiceCommunicator communicator, PluginCollection ApolloPluginsBase) : base(communicator, ApolloPluginsBase.ToArray())
+	    public ApolloClient(IServiceCommunicator communicator, PluginCollection apolloPluginsBase) : base(communicator, apolloPluginsBase.ToArray())
 	    {
 		    LoadCorePlugin();
 	    }

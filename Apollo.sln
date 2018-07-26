@@ -31,9 +31,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mocks", "Mocks", "{8BC09B56
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Apollo.ServiceBus.Tests", "src\Tests\Apollo.ServiceBus.Tests\Apollo.ServiceBus.Tests.csproj", "{CD39E6BA-42E2-402A-80C1-B701D277DFA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Apollo.Mocks", "src\Tests\Mocks\Apollo.Mocks\Apollo.Mocks.csproj", "{E06BDE29-D458-4541-BD19-D0C59EF14809}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Apollo.Mocks", "src\Tests\Mocks\Apollo.Mocks\Apollo.Mocks.csproj", "{E06BDE29-D458-4541-BD19-D0C59EF14809}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Apollo.Common.Tests", "src\Tests\Apollo.Common.Tests\Apollo.Common.Tests.csproj", "{5102F546-2876-4627-9266-2265602642C2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Apollo.Common.Tests", "src\Tests\Apollo.Common.Tests\Apollo.Common.Tests.csproj", "{5102F546-2876-4627-9266-2265602642C2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FeaturePlugins", "FeaturePlugins", "{0C952804-6A65-4C62-941D-AB2BDC99C5D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Apollo.ConfigurationPugins", "src\Features\Apollo.ConfigurationPugins\Apollo.ConfigurationPugins.csproj", "{DD4CAAA3-594C-45B1-9B9E-5846AD36CE5D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,6 +85,10 @@ Global
 		{5102F546-2876-4627-9266-2265602642C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5102F546-2876-4627-9266-2265602642C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5102F546-2876-4627-9266-2265602642C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD4CAAA3-594C-45B1-9B9E-5846AD36CE5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD4CAAA3-594C-45B1-9B9E-5846AD36CE5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD4CAAA3-594C-45B1-9B9E-5846AD36CE5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD4CAAA3-594C-45B1-9B9E-5846AD36CE5D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,6 +105,7 @@ Global
 		{CD39E6BA-42E2-402A-80C1-B701D277DFA8} = {E9CE4309-4F98-4E19-B537-9A2AFEAD0A4A}
 		{E06BDE29-D458-4541-BD19-D0C59EF14809} = {8BC09B56-8504-42F2-87A0-A6B8A67C08A5}
 		{5102F546-2876-4627-9266-2265602642C2} = {E9CE4309-4F98-4E19-B537-9A2AFEAD0A4A}
+		{DD4CAAA3-594C-45B1-9B9E-5846AD36CE5D} = {0C952804-6A65-4C62-941D-AB2BDC99C5D1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FBDCED95-2FB8-4563-A50F-01287698A8B6}

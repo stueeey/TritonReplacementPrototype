@@ -48,5 +48,6 @@ namespace Apollo.Common.Abstractions
 		event OnMessageReceived AnyMessageReceived;
 
 		Task<IMessage> WaitForReplyTo(IMessage message, CancellationToken? token = null, TimeSpan? timeout = null);
+		Task<List<IMessage>> WaitForRepliesTo(IMessage message, CancellationToken? token = null, TimeSpan? timeout = null, Predicate<IMessage> shouldStopWaiting = null);
 	}
 }

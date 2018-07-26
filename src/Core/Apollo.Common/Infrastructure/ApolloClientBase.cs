@@ -12,6 +12,8 @@ namespace Apollo.Common.Infrastructure
 
 	    protected IDictionary<Type, ApolloPluginBase> Plugins { get; set; } = new Dictionary<Type, ApolloPluginBase>();
 
+	    public ApolloPluginBase[] GetPlugins() => Plugins.Values.ToArray();
+
 	    public T GetPlugin<T>() where T : ApolloPluginBase
 	    {
 		    lock (Plugins)
@@ -24,6 +26,7 @@ namespace Apollo.Common.Infrastructure
 	    }
 
 	    private ILog _overrideLogger;
+		// Used for diagnostics in unit tests
 	    public ILog OverrideLogger
 	    {
 		    set
@@ -39,17 +42,17 @@ namespace Apollo.Common.Infrastructure
 		    Communicator = communicator ?? throw new ArgumentNullException(nameof(communicator));
 	    }
 
-	    protected ApolloClientBase(IServiceCommunicator communicator, params ApolloPluginBase[] ApolloPluginsBase)
+	    protected ApolloClientBase(IServiceCommunicator communicator, params ApolloPluginBase[] apolloPluginsBase)
 	    {
 		    Communicator = communicator ?? throw new ArgumentNullException(nameof(communicator));
-		    LoadPlugins(ApolloPluginsBase);
+		    LoadPlugins(apolloPluginsBase);
 	    }
 
-	    public void LoadPlugins(params ApolloPluginBase[] ApolloPluginsBase)
+	    public void LoadPlugins(params ApolloPluginBase[] apolloPluginsBase)
 	    {
 		    lock (Plugins)
 		    {
-			    foreach (var plugin in ApolloPluginsBase)
+			    foreach (var plugin in apolloPluginsBase)
 			    {
 				    Plugins.Add(plugin.GetType(), plugin);
 				    plugin.SetCommunicator(Communicator);
