@@ -9,9 +9,6 @@ namespace Apollo.Common
 {
     public static class ApolloHelpers
     {
-		private static string OsInstallIdentifier => Registry.GetValue(@"HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion", "ProductId", "<<Unable To Read>>").ToString();
-	    public static string GetMachineIdentifier() => $"{OsInstallIdentifier}|{Environment.MachineName}";
-
 	    public static string GetMessageBodyAsString(this IMessage message) => Encoding.UTF8.GetString(message.Body);
 	    public static void SetMessageBodyAsString(this IMessage message, string body) => message.Body = Encoding.UTF8.GetBytes(body);
 
@@ -38,5 +35,6 @@ namespace Apollo.Common
 		    }
 	    }
 
+	    public static bool LabelMatches(this IMessage message, string label) => StringComparer.OrdinalIgnoreCase.Equals(message.Label.Trim(), label);
     }
 }

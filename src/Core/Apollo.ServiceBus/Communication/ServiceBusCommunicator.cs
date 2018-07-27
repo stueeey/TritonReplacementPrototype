@@ -27,7 +27,6 @@ namespace Apollo.ServiceBus.Communication
 
 			public ManualResetEventSlim WaitHandle { get; } = new ManualResetEventSlim();
 			public List<IMessage> Messages { get; set; }
-			public DateTime StartTimeUtc { get; } = DateTime.UtcNow;
 			public DateTime ExpiryTimeUtc { get; set; }
 		}
 
@@ -238,12 +237,6 @@ namespace Apollo.ServiceBus.Communication
 
 		public event OnMessageSent AnyMessageSent;
 		public event OnMessageReceived AnyMessageReceived;
-
-		public Task<IMessage> WaitForReplyTo(IMessage message, CancellationToken? token = null, TimeSpan? timeout = null)
-		{
-			
-			
-		}
 
 		public Task<List<IMessage>> WaitForRepliesTo(IMessage message, CancellationToken? token = null, TimeSpan? timeout = null, Predicate<IMessage> shouldStopWaiting = null)
 		{

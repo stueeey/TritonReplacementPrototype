@@ -16,15 +16,16 @@ namespace Apollo.Common.Infrastructure
 		public static MessageHandler CreateFakeHandler() => new MessageHandler(null, (q, m, c) => MessageStatus.Unhandled) { MessageFilter = (m) => false };
 
 		public ApolloPluginBase Plugin { get; }
-		public MessageHandler(ApolloPluginBase Plugin, MessageReceivedDelegate onMessageReceived, MessageReceivedErrorDelegate onError = null)
+		public MessageHandler(ApolloPluginBase plugin, MessageReceivedDelegate onMessageReceived, MessageReceivedErrorDelegate onError = null)
 		{
+			Plugin = plugin;
 			OnMessageReceived = onMessageReceived ?? throw new ArgumentNullException(nameof(onMessageReceived));
 		}
 
-		public MessageHandler(ApolloPluginBase Plugin, string messageLabel, MessageReceivedDelegate onMessageReceived, MessageReceivedErrorDelegate onError = null)
+		public MessageHandler(ApolloPluginBase plugin, string messageLabel, MessageReceivedDelegate onMessageReceived, MessageReceivedErrorDelegate onError = null)
 		{
 			OnMessageReceived = onMessageReceived ?? throw new ArgumentNullException(nameof(onMessageReceived));
-			MessageFilter = m => StringComparer.OrdinalIgnoreCase.Equals(m.Label.Trim(), messageLabel);
+			MessageFilter = m => m.LabelMatches(messageLabel);
 			FilterName = $"Label == {messageLabel}";
 		}
 
