@@ -35,7 +35,13 @@ namespace Apollo.Common.Infrastructure
 
 		#region Implementation of IDisposable
 
-		public abstract void Dispose();
+		public virtual void Dispose()
+		{
+			ListeningForClientSessionMessages = false;
+			ListeningForRegistrations = false;
+			ListeningForServerJobs = false;
+			ListeningForAliasMessages = false;
+		}
 
 		#endregion
 
@@ -49,10 +55,7 @@ namespace Apollo.Common.Infrastructure
 		protected abstract ILog Logger { get; }
 
 		public abstract ConcurrentDictionary<string, object> State { get; }
-		public abstract T GetState<T>(string key);
-		public abstract void SignalPluginEvent(string eventName, object state = null);
 		public abstract IMessageFactory MessageFactory { get; }
-		public abstract void RemoveListenersForPlugin(ApolloPluginBase plugin);
 		public abstract Task SendToClientAsync(IMessage message, CancellationToken? token = null);
 		public abstract Task SendToClientAsync(CancellationToken? token, params IMessage[] messages);
 		public abstract Task SendToClientAsync(params IMessage[] messages);
@@ -112,6 +115,20 @@ namespace Apollo.Common.Infrastructure
 		protected abstract ApolloQueue? GetReplyQueue(string queueName);
 
 		private readonly IDictionary<ApolloQueue, ICollection<MessageHandler>> _handlers = new Dictionary<ApolloQueue, ICollection<MessageHandler>>();
+
+		public void SignalPluginEvent(string eventName, object state)
+		{
+			PluginEvent?.Invoke(eventName, state);
+		}
+
+		public void RemoveListenersForPlugin(ApolloPluginBase plugin)
+		{
+			foreach (var queueType in _handlers)
+			{
+				foreach (var itemToRemove in queueType.Value.Where(h => h.Plugin == plugin).ToArray())
+					RemoveHandler(queueType.Key, itemToRemove);
+			}
+		}
 
 		public void AddHandler(ApolloQueue queueType, MessageHandler handler)
 		{

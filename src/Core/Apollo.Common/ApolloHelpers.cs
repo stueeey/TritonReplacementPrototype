@@ -35,6 +35,14 @@ namespace Apollo.Common
 		    }
 	    }
 
+		
+	    public static T GetState<T>(this IServiceCommunicator communicator, string key)
+	    {
+		    return communicator.State.TryGetValue(key, out var value)
+			    ? (T)value
+			    : default(T);
+	    }
+
 	    public static bool LabelMatches(this IMessage message, string label) => StringComparer.OrdinalIgnoreCase.Equals(message.Label.Trim(), label);
     }
 }

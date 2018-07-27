@@ -14,7 +14,6 @@ namespace Apollo.Common.Abstractions
 	public interface IServiceCommunicator : IDisposable
 	{
 		ConcurrentDictionary<string, object> State { get; }
-		T GetState<T>(string key);
 		void SignalPluginEvent(string eventName, object state = null);
 
 		IMessageFactory MessageFactory { get; }
