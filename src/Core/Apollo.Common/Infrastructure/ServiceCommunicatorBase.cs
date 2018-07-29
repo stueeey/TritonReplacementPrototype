@@ -45,16 +45,13 @@ namespace Apollo.Common.Infrastructure
 
 		#endregion
 
-		protected bool _listenForClientSessionMessages;
-		protected bool _listenForRegistrations;
-		protected bool _listenForServerJobs;
-		protected bool _listenForAliasSessionMessages;
+
 
 		#region Implementation of IServiceCommunicator
 
 		protected abstract ILog Logger { get; }
 
-		public abstract ConcurrentDictionary<string, object> State { get; }
+		public ConcurrentDictionary<string, object> State { get; } = new ConcurrentDictionary<string, object>();
 		public abstract IMessageFactory MessageFactory { get; }
 		public abstract Task SendToClientAsync(IMessage message, CancellationToken? token = null);
 		public abstract Task SendToClientAsync(CancellationToken? token, params IMessage[] messages);
@@ -71,7 +68,13 @@ namespace Apollo.Common.Infrastructure
 		public bool ListeningForClientSessionMessages
 		{
 			get => _listenForClientSessionMessages;
-			private set => HandleListenForClientMessagesChanged(value);
+			private set
+			{
+				if (_listenForClientSessionMessages == value)
+					return;
+				_listenForClientSessionMessages = value;
+				HandleListenForClientMessagesChanged(value);
+			}
 		}
 
 		protected abstract void HandleListenForClientMessagesChanged(bool value);
@@ -79,7 +82,13 @@ namespace Apollo.Common.Infrastructure
 		public bool ListeningForRegistrations
 		{
 			get => _listenForRegistrations;
-			private set => HandleListenForRegistrationsChanged(value);
+			private set
+			{
+				if (_listenForRegistrations == value)
+					return;
+				_listenForRegistrations = value;
+				HandleListenForRegistrationsChanged(value);
+			}
 		}
 
 		protected abstract void HandleListenForRegistrationsChanged(bool value);
@@ -87,7 +96,13 @@ namespace Apollo.Common.Infrastructure
 		public bool ListeningForServerJobs
 		{
 			get => _listenForServerJobs;
-			private set => HandleListenForServerJobsChanged(value);
+			private set
+			{
+				if (_listenForServerJobs == value)
+					return;
+				_listenForServerJobs = value;
+				HandleListenForServerJobsChanged(value);
+			}
 		}
 
 		protected abstract void HandleListenForServerJobsChanged(bool value);
@@ -95,10 +110,21 @@ namespace Apollo.Common.Infrastructure
 		public bool ListeningForAliasMessages
 		{
 			get => _listenForAliasSessionMessages;
-			private set => HandleListenForAliasMessagesChanged(value);
+			private set
+			{
+				if (_listenForAliasSessionMessages == value)
+					return;
+				_listenForAliasSessionMessages = value;
+				HandleListenForAliasMessagesChanged(value);
+			}
 		}
 
 		protected abstract void HandleListenForAliasMessagesChanged(bool value);
+
+		protected bool _listenForClientSessionMessages;
+		protected bool _listenForRegistrations;
+		protected bool _listenForServerJobs;
+		protected bool _listenForAliasSessionMessages;
 
 		public event PluginEventDelegate PluginEvent;
 		public event OnMessageSent AnyMessageSent;
@@ -112,9 +138,9 @@ namespace Apollo.Common.Infrastructure
 		#endregion
 
 		protected abstract TimeSpan MaxReplyWaitTime { get; }
-		protected abstract ApolloQueue? GetReplyQueue(string queueName);
+		protected abstract ApolloQueue? ParseQueue(string queueName);
 
-		private readonly IDictionary<ApolloQueue, ICollection<MessageHandler>> _handlers = new Dictionary<ApolloQueue, ICollection<MessageHandler>>();
+		protected readonly IDictionary<ApolloQueue, ICollection<MessageHandler>> Handlers = new Dictionary<ApolloQueue, ICollection<MessageHandler>>();
 
 		public void SignalPluginEvent(string eventName, object state)
 		{
@@ -123,7 +149,7 @@ namespace Apollo.Common.Infrastructure
 
 		public void RemoveListenersForPlugin(ApolloPluginBase plugin)
 		{
-			foreach (var queueType in _handlers)
+			foreach (var queueType in Handlers)
 			{
 				foreach (var itemToRemove in queueType.Value.Where(h => h.Plugin == plugin).ToArray())
 					RemoveHandler(queueType.Key, itemToRemove);
@@ -134,13 +160,13 @@ namespace Apollo.Common.Infrastructure
 		{
 			if (handler == null)
 				throw new ArgumentNullException(nameof(handler));
-			lock (_handlers)
+			lock (Handlers)
 			{
-				if (_handlers.ContainsKey(queueType))
-					_handlers[queueType].Add(handler);
+				if (Handlers.ContainsKey(queueType))
+					Handlers[queueType].Add(handler);
 				else
-					_handlers.Add(queueType, new List<MessageHandler> { handler });
-				if (_handlers[queueType].Count > 1)
+					Handlers.Add(queueType, new List<MessageHandler> { handler });
+				if (Handlers[queueType].Count > 1)
 					ListenToQueue(queueType, true);
 			}
 		}
@@ -149,14 +175,14 @@ namespace Apollo.Common.Infrastructure
 		{
 			if (handler == null)
 				throw new ArgumentNullException(nameof(handler));
-			lock (_handlers)
+			lock (Handlers)
 			{
-				if (!_handlers.ContainsKey(queueType))
+				if (!Handlers.ContainsKey(queueType))
 					return;
-				_handlers[queueType].Remove(handler);
-				if (!_handlers[queueType].Any())
-					_handlers.Remove(queueType);
-				else if (_handlers[queueType].Count <= 1)
+				Handlers[queueType].Remove(handler);
+				if (!Handlers[queueType].Any())
+					Handlers.Remove(queueType);
+				else if (Handlers[queueType].Count <= 1)
 					ListenToQueue(queueType, false);
 			}
 		}
@@ -224,7 +250,7 @@ namespace Apollo.Common.Infrastructure
 
 		private ICollection<IMessage> WaitForReplies(ReplyOptions options)
 		{
-			var replyQueue = GetReplyQueue(options.ReplyQueue) ?? throw new ArgumentException($"Cannot wait for a reply to a message which does not have a valid {nameof(IMessage.ReplyToEntity)}");
+			var replyQueue = ParseQueue(options.ReplyQueue) ?? throw new ArgumentException($"Cannot wait for a reply to a message which does not have a valid {nameof(IMessage.ReplyToEntity)}");
 			var calculatedTimeout = options.Timeout;
 			calculatedTimeout = calculatedTimeout == TimeSpan.Zero
 				? TimeSpan.FromSeconds(10)

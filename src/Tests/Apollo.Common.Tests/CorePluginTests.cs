@@ -141,7 +141,7 @@ namespace Apollo.Common.Tests
 			}
 		}
 
-		[Fact(DisplayName = "As a client I want to be able to ping the server")]
+		[Fact(DisplayName = "As a client I should get a timeout if i try to ping the servers when they are down")]
 		public async Task Ping__ping_the_server_when_it_is_down()
 		{
 			using (var service = new MockService(_logger))
@@ -152,7 +152,7 @@ namespace Apollo.Common.Tests
 			}
 		}
 
-		[Fact(DisplayName = "As a client I want to be able to ping the server")]
+		[Fact(DisplayName = "As a client I want to be able to ping a client")]
 		public async Task Ping__ping_a_client()
 		{
 			using (var service = new MockService(_logger))
@@ -170,7 +170,7 @@ namespace Apollo.Common.Tests
 			}
 		}
 
-		[Fact(DisplayName = "As a client I want to be able to ping the server")]
+		[Fact(DisplayName = "As a client I want to be able to ping myself")]
 		public async Task Ping__ping_self()
 		{
 			using (var service = new MockService(_logger))

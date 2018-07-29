@@ -53,7 +53,7 @@ namespace Apollo.Common.Plugins
 			    var startTime = DateTime.UtcNow;
 			    message.TimeToLive = timeOut ?? TimeSpan.FromSeconds(30);
 			    await sendMessage(message);
-			    var response = await Communicator.WaitForReplyTo(message, cancellationToken);
+			    var response = await Communicator.WaitForSingleReplyAsync(message, cancellationToken);
 			    switch (response?.Label)
 			    {
 				    case ApolloConstants.NegativeAcknowledgement:

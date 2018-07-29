@@ -50,7 +50,7 @@ namespace Apollo.Common.Plugins
 		    if (timeOut.HasValue)
 				registrationMessage.TimeToLive = timeOut.Value;
 		    await Communicator.SendRegistrationMessageAsync(registrationMessage);
-		    var response = await Communicator.WaitForReplyTo(registrationMessage);
+		    var response = await Communicator.WaitForSingleReplyAsync(registrationMessage);
 		    if (response?.Label != ApolloConstants.PositiveAcknowledgement)
 			    return string.Empty;
 		    Logger.Info($"Received confirmation of registration as {response.TargetSession}");
@@ -66,7 +66,7 @@ namespace Apollo.Common.Plugins
 		    message.Properties[AliasTokenKey] = token.ToString();
 		    message.TimeToLive = TimeSpan.FromSeconds(30);
 		    await Communicator.SendRegistrationMessageAsync(message);
-		    var response = await Communicator.WaitForReplyTo(message);
+		    var response = await Communicator.WaitForSingleReplyAsync(message);
 		    if (response?.Label != ApolloConstants.PositiveAcknowledgement || !response.Properties.ContainsKey(AliasTokenKey))
 		    {
 				Logger.Warn($"Failed to get ownership of {alias} ({response?["Reason"] ?? "No response"})");
@@ -87,7 +87,7 @@ namespace Apollo.Common.Plugins
 		    message.Properties[AliasTokenKey] = token.ToString();
 		    message.TimeToLive = TimeSpan.FromSeconds(30);
 		    await Communicator.SendRegistrationMessageAsync(message);
-		    var response = await Communicator.WaitForReplyTo(message);
+		    var response = await Communicator.WaitForSingleReplyAsync(message);
 		    if (response?.Label != ApolloConstants.PositiveAcknowledgement || !response.Properties.ContainsKey(AliasTokenKey))
 		    {
 			    Logger.Warn($"Failed to take ownership of {alias} ({response?["Reason"] ?? "No response"})");

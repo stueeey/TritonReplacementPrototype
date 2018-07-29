@@ -13,6 +13,7 @@ using log4net;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using System.Reactive;
+using Apollo.Common;
 
 namespace Apollo.ServiceBus.Communication
 {
@@ -237,6 +238,10 @@ namespace Apollo.ServiceBus.Communication
 
 		public event OnMessageSent AnyMessageSent;
 		public event OnMessageReceived AnyMessageReceived;
+		public Task<ICollection<IMessage>> WaitForRepliesAsync(ReplyOptions options)
+		{
+			throw new NotImplementedException();
+		}
 
 		public Task<List<IMessage>> WaitForRepliesTo(IMessage message, CancellationToken? token = null, TimeSpan? timeout = null, Predicate<IMessage> shouldStopWaiting = null)
 		{

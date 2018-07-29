@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
-using Microsoft.Win32;
 
 namespace Apollo.Common
 {
@@ -44,5 +44,14 @@ namespace Apollo.Common
 	    }
 
 	    public static bool LabelMatches(this IMessage message, string label) => StringComparer.OrdinalIgnoreCase.Equals(message.Label.Trim(), label);
+
+	    public static async Task<IMessage> WaitForSingleReplyAsync(this IServiceCommunicator communicator, IMessage message, CancellationToken? token = null, TimeSpan? timeout = null)
+	    {
+		    var options = ReplyOptions.WaitForSingleReply(message);
+		    options.CancelToken = token;
+			if (timeout != null)
+				options.Timeout = timeout.Value;
+			return (await communicator.WaitForRepliesAsync(options)).FirstOrDefault();
+	    }
     }
 }
