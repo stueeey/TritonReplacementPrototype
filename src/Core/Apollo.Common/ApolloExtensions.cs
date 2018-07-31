@@ -7,7 +7,7 @@ using Apollo.Common.Abstractions;
 
 namespace Apollo.Common
 {
-    public static class ApolloHelpers
+    public static class ApolloExtensions
     {
 	    public static string GetMessageBodyAsString(this IMessage message) => Encoding.UTF8.GetString(message.Body);
 	    public static void SetMessageBodyAsString(this IMessage message, string body) => message.Body = Encoding.UTF8.GetBytes(body);
@@ -53,5 +53,21 @@ namespace Apollo.Common
 				options.Timeout = timeout.Value;
 			return (await communicator.WaitForRepliesAsync(options)).FirstOrDefault();
 	    }
+
+	    public static bool IsTerminatingMessage(this IMessage message) => message.LabelMatches(ApolloConstants.EndOfMessages);
+
+	    public static bool IsPositiveAcknowledgement(this IMessage message) => message.LabelMatches(ApolloConstants.PositiveAcknowledgement);
+
+	    public static bool IsNegativeAcknowledgement(this IMessage message) => message.LabelMatches(ApolloConstants.NegativeAcknowledgement);
+
+	    public static void ThrowIfNegativeAcknowledgement(this IMessage message)
+	    {
+		    if (message.IsNegativeAcknowledgement())
+			    throw new NakException(message);
+	    }
+
+		public static string GetReasonOrPlaceholder(this IMessage message) => message.GetReason() ?? "<Reason not specified>";
+
+	    public static string GetReason(this IMessage message) => message.GetStringProperty("Reason");
     }
 }

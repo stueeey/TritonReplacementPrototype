@@ -10,8 +10,8 @@ namespace Apollo.ServiceBus.Ninject
 	public class ApolloServiceBusImplementations : NinjectModule
     {
 	    private readonly ServiceBusConfiguration _configuration;
-	    public ApolloPluginBase[] ServerPlugins { get; set; } = {};
-	    public ApolloPluginBase[] ClientPlugins { get; set;} = {};
+	    public ApolloPlugin[] ServerPlugins { get; set; } = {};
+	    public ApolloPlugin[] ClientPlugins { get; set;} = {};
 
 	    public ApolloServiceBusImplementations(ServiceBusConfiguration configuration)
 	    {

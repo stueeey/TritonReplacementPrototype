@@ -17,7 +17,7 @@ namespace Apollo.Common.Abstractions
 		void SignalPluginEvent(string eventName, object state = null);
 
 		IMessageFactory MessageFactory { get; }
-		void RemoveListenersForPlugin(ApolloPluginBase plugin);
+		void RemoveListenersForPlugin(ApolloPlugin plugin);
 		void AddHandler(ApolloQueue queueType, MessageHandler handler);
 		void RemoveHandler(ApolloQueue queueType, MessageHandler handler);
 

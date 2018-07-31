@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Apollo.Common;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
 using log4net;

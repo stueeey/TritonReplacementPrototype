@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Apollo.Common;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
 
 namespace Apollo.ConsoleClient
 {
-	public class EchoPlugin : ApolloPluginBase
+	public class EchoPlugin : ApolloPlugin
 	{
 		private const string EchoKey = "Echo";
 

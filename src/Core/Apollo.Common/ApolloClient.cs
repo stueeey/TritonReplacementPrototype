@@ -21,7 +21,7 @@ namespace Apollo.Common
 			    LoadPlugins(new ClientCorePlugin());
 	    }
 
-	    public ApolloClient(IServiceCommunicator communicator, params ApolloPluginBase[] apolloPluginsBase) : base(communicator, apolloPluginsBase)
+	    public ApolloClient(IServiceCommunicator communicator, params ApolloPlugin[] apolloPlugins) : base(communicator, apolloPlugins)
 	    {
 		    LoadCorePlugin();
 	    }

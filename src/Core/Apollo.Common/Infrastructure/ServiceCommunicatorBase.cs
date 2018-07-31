@@ -147,7 +147,7 @@ namespace Apollo.Common.Infrastructure
 			PluginEvent?.Invoke(eventName, state);
 		}
 
-		public void RemoveListenersForPlugin(ApolloPluginBase plugin)
+		public void RemoveListenersForPlugin(ApolloPlugin plugin)
 		{
 			foreach (var queueType in Handlers)
 			{

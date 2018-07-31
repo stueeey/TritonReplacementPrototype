@@ -5,7 +5,7 @@ using Apollo.Common.Infrastructure;
 
 namespace Apollo.Common.Plugins
 {
-    public class MessageCounterPlugin : ApolloPluginBase
+    public class MessageCounterPlugin : ApolloPlugin
     {
 		protected override async Task OnInitialized()
 		{

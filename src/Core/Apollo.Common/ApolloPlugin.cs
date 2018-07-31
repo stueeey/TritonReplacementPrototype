@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
 using log4net;
 
-namespace Apollo.Common.Infrastructure
+namespace Apollo.Common
 {
-	public abstract class ApolloPluginBase
+	public abstract class ApolloPlugin
 	{
 		protected static ILog ClassLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{ApolloConstants.LoggerPluginsPrefix}.{MethodBase.GetCurrentMethod()?.DeclaringType?.Name ?? "<Unknown>"}");
 		protected ILog Logger { get; private set;}
@@ -20,14 +20,9 @@ namespace Apollo.Common.Infrastructure
 
 		public ILog GetLogger() => Logger;
 
-		protected ApolloPluginBase()
+		protected ApolloPlugin()
 		{
 			SetLogger();
-		}
-
-		protected void SubscribeButDoNothing(IMessage message, ref MessageReceivedEventArgs e)
-		{
-
 		}
 
 		internal void SetCommunicator(IServiceCommunicator communicator)

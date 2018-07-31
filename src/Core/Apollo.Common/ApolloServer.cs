@@ -17,7 +17,7 @@ namespace Apollo.Common
 			    LoadPlugins(new ServerCorePlugin(storage));
 	    }
 
-	    public ApolloServer(IServiceCommunicator communicator, IRegistrationStorage storage, params ApolloPluginBase[] ApolloPluginsBase) : base(communicator, ApolloPluginsBase)
+	    public ApolloServer(IServiceCommunicator communicator, IRegistrationStorage storage, params ApolloPlugin[] apolloPlugins) : base(communicator, apolloPlugins)
 	    {
 		    LoadCorePlugin(storage);
 	    }

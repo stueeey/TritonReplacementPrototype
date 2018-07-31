@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Apollo.Common;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
 using Apollo.Common.Plugins;
@@ -101,7 +102,7 @@ namespace Apollo.ConsoleClient
 		    );
 		    var implementations = new ApolloServiceBusImplementations(configuration)
 		    {
-			    ClientPlugins = new ApolloPluginBase[]
+			    ClientPlugins = new ApolloPlugin[]
 			    {
 				    new EchoPlugin()
 			    }

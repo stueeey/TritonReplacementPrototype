@@ -6,7 +6,7 @@ using Apollo.Common.Infrastructure;
 
 namespace Apollo.Common.Plugins
 {
-    public abstract class CorePlugin : ApolloPluginBase
+    public abstract class CorePlugin : ApolloPlugin
     {
 		private const string PingLabel = "Ping";
 		protected MessageHandler PingHandler;

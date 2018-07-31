@@ -1,9 +1,8 @@
-﻿using Apollo.Common.Abstractions;
-using log4net.Core;
-using System;
+﻿using System;
 using System.Threading;
+using Apollo.Common.Abstractions;
 
-namespace Apollo.Common.Infrastructure
+namespace Apollo.Common
 {
 	public delegate MessageStatus MessageReceivedDelegate(ApolloQueue sourceQueue, IMessage message, CancellationToken? cancelToken);
 	public delegate void MessageReceivedErrorDelegate(IMessage message, Exception error);
@@ -15,14 +14,14 @@ namespace Apollo.Common.Infrastructure
 
 		public static MessageHandler CreateFakeHandler() => new MessageHandler(null, (q, m, c) => MessageStatus.Unhandled) { MessageFilter = (m) => false };
 
-		public ApolloPluginBase Plugin { get; }
-		public MessageHandler(ApolloPluginBase plugin, MessageReceivedDelegate onMessageReceived, MessageReceivedErrorDelegate onError = null)
+		public ApolloPlugin Plugin { get; }
+		public MessageHandler(ApolloPlugin plugin, MessageReceivedDelegate onMessageReceived, MessageReceivedErrorDelegate onError = null)
 		{
 			Plugin = plugin;
 			OnMessageReceived = onMessageReceived ?? throw new ArgumentNullException(nameof(onMessageReceived));
 		}
 
-		public MessageHandler(ApolloPluginBase plugin, string messageLabel, MessageReceivedDelegate onMessageReceived, MessageReceivedErrorDelegate onError = null)
+		public MessageHandler(ApolloPlugin plugin, string messageLabel, MessageReceivedDelegate onMessageReceived, MessageReceivedErrorDelegate onError = null)
 		{
 			OnMessageReceived = onMessageReceived ?? throw new ArgumentNullException(nameof(onMessageReceived));
 			MessageFilter = m => m.LabelMatches(messageLabel);

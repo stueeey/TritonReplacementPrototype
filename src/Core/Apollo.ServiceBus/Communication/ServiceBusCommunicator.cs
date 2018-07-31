@@ -177,7 +177,7 @@ namespace Apollo.ServiceBus.Communication
 			PluginEvent?.Invoke(eventName, state);
 		}
 
-		public void RemoveListenersForPlugin(ApolloPluginBase plugin)
+		public void RemoveListenersForPlugin(ApolloPlugin plugin)
 		{
 			foreach (var queueType in _handlers)
 			{

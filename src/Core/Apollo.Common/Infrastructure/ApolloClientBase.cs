@@ -10,11 +10,11 @@ namespace Apollo.Common.Infrastructure
     {
 	    public IServiceCommunicator Communicator { get; protected set; }
 
-	    protected IDictionary<Type, ApolloPluginBase> Plugins { get; set; } = new Dictionary<Type, ApolloPluginBase>();
+	    protected IDictionary<Type, ApolloPlugin> Plugins { get; set; } = new Dictionary<Type, ApolloPlugin>();
 
-	    public ApolloPluginBase[] GetPlugins() => Plugins.Values.ToArray();
+	    public ApolloPlugin[] GetPlugins() => Plugins.Values.ToArray();
 
-	    public T GetPlugin<T>() where T : ApolloPluginBase
+	    public T GetPlugin<T>() where T : ApolloPlugin
 	    {
 		    lock (Plugins)
 		    {
@@ -42,17 +42,17 @@ namespace Apollo.Common.Infrastructure
 		    Communicator = communicator ?? throw new ArgumentNullException(nameof(communicator));
 	    }
 
-	    protected ApolloClientBase(IServiceCommunicator communicator, params ApolloPluginBase[] apolloPluginsBase)
+	    protected ApolloClientBase(IServiceCommunicator communicator, params ApolloPlugin[] apolloPlugins)
 	    {
 		    Communicator = communicator ?? throw new ArgumentNullException(nameof(communicator));
-		    LoadPlugins(apolloPluginsBase);
+		    LoadPlugins(apolloPlugins);
 	    }
 
-	    public void LoadPlugins(params ApolloPluginBase[] apolloPluginsBase)
+	    public void LoadPlugins(params ApolloPlugin[] apolloPlugins)
 	    {
 		    lock (Plugins)
 		    {
-			    foreach (var plugin in apolloPluginsBase)
+			    foreach (var plugin in apolloPlugins)
 			    {
 				    Plugins.Add(plugin.GetType(), plugin);
 				    plugin.SetCommunicator(Communicator);

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Apollo.Common.Infrastructure
+namespace Apollo.Common
 {
     public static class ApolloConstants
     {

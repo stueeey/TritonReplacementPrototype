@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using Apollo.Common;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
 using Apollo.Mocks;
@@ -40,7 +41,7 @@ namespace Apollo.ConsoleServer
 		    );
 		    var implementations = new ApolloServiceBusImplementations(configuration)
 		    {
-			    ServerPlugins = new ApolloPluginBase[]
+			    ServerPlugins = new ApolloPlugin[]
 			    {
 				    new EchoListenerPlugin()
 			    }
