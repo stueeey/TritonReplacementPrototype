@@ -3,7 +3,6 @@ using System.IO;
 using System.Reflection;
 using Apollo.Common;
 using Apollo.Common.Abstractions;
-using Apollo.Common.Infrastructure;
 using Apollo.Mocks;
 using Apollo.ServiceBus;
 using Apollo.ServiceBus.Ninject;

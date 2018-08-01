@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
@@ -53,18 +52,31 @@ namespace Apollo.Common.Infrastructure
 
 		public ConcurrentDictionary<string, object> State { get; } = new ConcurrentDictionary<string, object>();
 		public IMessageFactory MessageFactory { get; protected set; }
-		public abstract Task SendToClientAsync(IMessage message, CancellationToken? token = null);
-		public abstract Task SendToClientAsync(CancellationToken? token, params IMessage[] messages);
-		public abstract Task SendToClientAsync(params IMessage[] messages);
-		public abstract Task SendToServerAsync(IMessage message, CancellationToken? token = null);
-		public abstract Task SendToServerAsync(CancellationToken? token, params IMessage[] messages);
+		public abstract Task SendToClientsAsync(params IMessage[] messages);
+		public async Task SendToClientAsync(string clientIdentifier, params IMessage[] messages)
+		{
+			if (messages == null)
+				return;
+			if (string.IsNullOrWhiteSpace(clientIdentifier))
+				throw new ArgumentException("client identifier cannot be blank or null", nameof(clientIdentifier));
+			foreach (var message in messages)
+				message.TargetSession = clientIdentifier;
+			await SendToClientsAsync(messages);
+		}
 		public abstract Task SendToServerAsync(params IMessage[] messages);
-		public abstract Task SendRegistrationMessageAsync(IMessage message, CancellationToken? token = null);
-		public abstract Task SendRegistrationMessageAsync(CancellationToken? token, params IMessage[] messages);
 		public abstract Task SendToRegistrationsAsync(params IMessage[] messages);
-		public abstract Task SendToAliasAsync(string alias, IMessage message, CancellationToken? token = null);
-		public abstract Task SendToAliasAsync(string alias, CancellationToken? token, params IMessage[] messages);
-		public abstract Task SendToAliasAsync(string alias, params IMessage[] messages);
+		public abstract Task SendToAliasAsync(params IMessage[] messages);
+		public async Task SendToAliasAsync(string alias, params IMessage[] messages)
+		{
+			if (messages == null)
+				return;
+			if (string.IsNullOrWhiteSpace(alias))
+				throw new ArgumentException("client identifier cannot be blank or null", nameof(alias));
+			foreach (var message in messages)
+				message.TargetSession = alias;
+			await SendToAliasAsync(messages);
+		}
+
 		public bool ListeningForClientSessionMessages
 		{
 			get => _listenForClientSessionMessages;

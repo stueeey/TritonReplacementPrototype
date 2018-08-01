@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common;
 using Apollo.Common.Abstractions;
-using Apollo.Common.Infrastructure;
 using Microsoft.Azure.ServiceBus;
 
 namespace Apollo.ServiceBus.Communication
@@ -136,7 +135,7 @@ namespace Apollo.ServiceBus.Communication
 		}
 
 		public Task SendToClientAsync(IMessage message, CancellationToken? token = null) => SendToClientAsync(token, message);
-		public Task SendToClientAsync(params IMessage[] messages) => SendToClientAsync(null, messages);
+		public Task SendToClientsAsync(params IMessage[] messages) => SendToClientAsync(null, messages);
 		public async Task SendToClientAsync(CancellationToken? token, params IMessage[] messages)
 		{
 			if (!messages.Any())

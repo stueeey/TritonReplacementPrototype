@@ -1,33 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using Apollo.Common.Abstractions;
+using Apollo.Common.Infrastructure;
 
 namespace Apollo.Mocks
 {
-	public class MockMessage : IMessage
+	public class MockMessage : MessageBase
 	{
 		#region Implementation of IMessage
 
-		public string Identifier { get; set; }
-		public string Label { get; set; }
-		public string TargetSession { get; set; }
-		public string To { get; set; }
-		public string ReplyToEntity { get; set; }
-		public string ReplyToSession { get; set; }
-		public string BodyType { get; set; }
-		public byte[] Body { get; set; }
-		public long BodySize => Body.LongLength;
-		public TimeSpan TimeToLive { get; set; }
-		public DateTime EnqueuedTimeUtc { get; } = DateTime.UtcNow;
-		public string ResponseTo { get; set; }
-		public IDictionary<string, object> Properties { get; } = new Dictionary<string, object>();
-
-		public object this[string propertyKey]
-		{
-			get => Properties.ContainsKey(propertyKey) ? Properties[propertyKey] : null;
-			set => Properties[propertyKey] = value;
-		}
+		public override string Identifier { get; set; }
+		public override string Label { get; set; }
+		public override string TargetSession { get; set; }
+		public override string To { get; set; }
+		public override string ReplyToEntity { get; set; }
+		public override string ReplyToSession { get; set; }
+		public override string BodyType { get; set; }
+		public override byte[] Body { get; set; }
+		public override long BodySize => Body.LongLength;
+		public override TimeSpan TimeToLive { get; set; }
+		public override DateTime EnqueuedTimeUtc { get; } = DateTime.UtcNow;
+		public override string ResponseTo { get; set; }
+		public override IDictionary<string, object> Properties { get; } = new Dictionary<string, object>();
 
 		#endregion
 	}

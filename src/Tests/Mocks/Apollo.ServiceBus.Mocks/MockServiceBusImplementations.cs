@@ -3,8 +3,6 @@ using Apollo.ServiceBus.Communication;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Apollo.ServiceBus.Mocks

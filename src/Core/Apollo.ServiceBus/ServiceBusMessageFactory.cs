@@ -1,7 +1,6 @@
 ﻿using System;
 using Apollo.Common;
 using Apollo.Common.Abstractions;
-using Apollo.Common.Infrastructure;
 
 namespace Apollo.ServiceBus
 {

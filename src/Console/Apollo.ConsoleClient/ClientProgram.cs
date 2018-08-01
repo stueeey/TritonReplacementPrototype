@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common;
 using Apollo.Common.Abstractions;
-using Apollo.Common.Infrastructure;
 using Apollo.Common.Plugins;
 using Apollo.ServiceBus;
 using Apollo.ServiceBus.Ninject;

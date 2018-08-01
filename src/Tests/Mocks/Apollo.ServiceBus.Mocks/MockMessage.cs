@@ -1,5 +1,4 @@
-﻿using Apollo.Common.Abstractions;
-using Microsoft.Azure.ServiceBus;
+﻿using Microsoft.Azure.ServiceBus;
 using System;
 
 namespace Apollo.ServiceBus.Mocks

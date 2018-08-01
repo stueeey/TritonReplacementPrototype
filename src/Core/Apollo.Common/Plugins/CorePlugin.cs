@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
-using Apollo.Common.Infrastructure;
 
 namespace Apollo.Common.Plugins
 {
@@ -21,7 +20,7 @@ namespace Apollo.Common.Plugins
 			var response = MessageFactory.CreateAcknowledgment(message);
 			response[nameof(PingStats.ServedBy)] = Communicator.GetState<string>(ApolloConstants.RegisteredAsKey);
 			response[nameof(PingStats.TimeRequestEnqueuedUtc)] = message.EnqueuedTimeUtc;
-			Communicator.SendToClientAsync(response);
+			Communicator.SendToClientsAsync(response);
 			return MessageStatus.Complete;
 		}
 
@@ -35,13 +34,13 @@ namespace Apollo.Common.Plugins
 		    return SendPingMessage(timeOut, cancellationToken, async (m) =>
 		    {
 			    m.TargetSession = identifier;
-			    await Communicator.SendToClientAsync(m);
+			    await Communicator.SendToClientsAsync(m);
 		    });
 	    }
 
 	    public Task<PingStats> PingAlias(string alias, TimeSpan? timeOut = null, CancellationToken? cancellationToken = null)
 	    {
-		    return SendPingMessage(timeOut, cancellationToken, m => Communicator.SendToAliasAsync(alias, m));
+		    return SendPingMessage(timeOut, cancellationToken, m => Communicator.SendToAliasAsync(m));
 	    }
 
 	    private async Task<PingStats> SendPingMessage(TimeSpan? timeOut, CancellationToken? cancellationToken, Func<IMessage, Task> sendMessage)

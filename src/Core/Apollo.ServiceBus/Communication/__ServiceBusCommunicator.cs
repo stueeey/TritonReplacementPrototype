@@ -7,11 +7,9 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
-using Apollo.Common.Infrastructure;
 using log4net;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
-using System.Reactive;
 using Apollo.Common;
 
 namespace Apollo.ServiceBus.Communication

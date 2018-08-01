@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
-using Apollo.Common.Infrastructure;
 
 namespace Apollo.Common.Abstractions
 {
@@ -21,9 +19,11 @@ namespace Apollo.Common.Abstractions
 		void AddHandler(ApolloQueue queueType, MessageHandler handler);
 		void RemoveHandler(ApolloQueue queueType, MessageHandler handler);
 
-		Task SendToClientAsync(params IMessage[] messages);
+		Task SendToClientsAsync(params IMessage[] messages);
+		Task SendToClientAsync(string clientIdentifier, params IMessage[] messages);
 		Task SendToServerAsync(params IMessage[] messages);
 		Task SendToRegistrationsAsync(params IMessage[] messages);
+		Task SendToAliasAsync(params IMessage[] messages);
 		Task SendToAliasAsync(string alias, params IMessage[] messages);
 
 		bool ListeningForClientSessionMessages { get; }

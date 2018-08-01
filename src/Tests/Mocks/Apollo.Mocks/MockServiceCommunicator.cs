@@ -24,9 +24,6 @@ namespace Apollo.Mocks
 		public const string RegistrationQueueName = "RegistrationQueue";
 		public const string AliasQueueName = "AliasQueue";
 
-		protected override ILog Logger { get; }
-		public override IMessageFactory MessageFactory { get; }
-
 		public MockServiceCommunicator(string identifier, MockService service, ITestOutputHelper logger = null)
 		{
 			State.TryAdd(ApolloConstants.RegisteredAsKey, identifier);
@@ -43,77 +40,64 @@ namespace Apollo.Mocks
 			}
 		}
 
-		public override async Task SendToClientAsync(IMessage message, CancellationToken? token = null)
+		public override async Task SendToClientsAsync(params IMessage[] messages)
 		{
-			await Task.Delay(10);
-			OnMessageSent(message, ApolloQueue.ClientSessions);
-			_service.Enqueue(message, ApolloQueue.ClientSessions, message.TargetSession);
-		}
-
-		public override async Task SendToClientAsync(CancellationToken? token, params IMessage[] messages)
-		{
+			if (messages == null)
+				return;
+			if (messages.Any(message => string.IsNullOrWhiteSpace(message.TargetSession)))
+				throw new ArgumentException("Tried to send a client message without a target session specified, make sure you set message.TargetSession to the id of the target client", nameof(messages));
 			foreach (var message in messages)
-				await SendToClientAsync(message, token);
-		}
-
-		public override async Task SendToClientAsync(params IMessage[] messages)
-		{
-			await SendToClientAsync(null, messages);
-		}
-
-		public override async Task SendToServerAsync(IMessage message, CancellationToken? token = null)
-		{
-			await Task.Delay(10);
-			OnMessageSent(message, ApolloQueue.ServerRequests);
-			_service.Enqueue(message, ApolloQueue.ServerRequests, null);
-		}
-
-		public override async Task SendToServerAsync(CancellationToken? token, params IMessage[] messages)
-		{
-			foreach (var message in messages)
-				await SendToServerAsync(message, token);
+			{
+				await Task.Delay(15);
+				OnMessageSent(message, ApolloQueue.ClientSessions);
+				_service.Enqueue(message, ApolloQueue.ClientSessions, message.TargetSession);
+			}
 		}
 
 		public override async Task SendToServerAsync(params IMessage[] messages)
 		{
-			await SendToServerAsync(null, messages);
-		}
-
-		public override async Task SendRegistrationMessageAsync(IMessage message, CancellationToken? token = null)
-		{
-			await Task.Delay(10);
-			OnMessageSent(message, ApolloQueue.Registrations);
-			_service.Enqueue(message, ApolloQueue.Registrations, null);
-		}
-
-		public override async Task SendRegistrationMessageAsync(CancellationToken? token, params IMessage[] messages)
-		{
 			foreach (var message in messages)
-				await SendRegistrationMessageAsync(message, token);
+			{
+				await Task.Delay(15);
+				OnMessageSent(message, ApolloQueue.ServerRequests);
+				_service.Enqueue(message, ApolloQueue.ServerRequests, message.TargetSession);
+			}
 		}
 
+		
 		public override async Task SendToRegistrationsAsync(params IMessage[] messages)
 		{
-			await SendRegistrationMessageAsync(null, messages);
-		}
-
-		public override async Task SendToAliasAsync(string alias, IMessage message, CancellationToken? token = null)
-		{
-			await Task.Delay(10);
-			message.Properties[ApolloConstants.TargetAliasKey] = alias;
-			OnMessageSent(message, ApolloQueue.Aliases);
-			_service.Enqueue(message, ApolloQueue.Aliases, null);
-		}
-
-		public override async Task SendToAliasAsync(string alias, CancellationToken? token, params IMessage[] messages)
-		{
 			foreach (var message in messages)
-				await SendToAliasAsync(alias, message, token);
+			{
+				await Task.Delay(15);
+				OnMessageSent(message, ApolloQueue.Registrations);
+				_service.Enqueue(message, ApolloQueue.Registrations, message.TargetSession);
+			}
+		}
+
+		public override async Task SendToAliasAsync(params IMessage[] messages)
+		{
+			if (messages == null)
+				return;
+			if (messages.Any(message => string.IsNullOrWhiteSpace(message.GetTargetAlias())))
+				throw new ArgumentException("Tried to send an alias message without an alias specified, call message.SetTargetAlias(<alias>)", nameof(messages));
+			foreach (var message in messages)
+			{
+				await Task.Delay(15);
+				OnMessageSent(message, ApolloQueue.Aliases);
+				_service.Enqueue(message, ApolloQueue.Aliases, null);
+			}
 		}
 
 		public override async Task SendToAliasAsync(string alias, params IMessage[] messages)
 		{
-			await SendToAliasAsync(alias, null, messages);
+			if (messages == null)
+				return;
+			if (string.IsNullOrWhiteSpace(alias))
+				throw new ArgumentException("client identifier cannot be blank or null", nameof(alias));
+			foreach (var message in messages)
+				message.TargetSession = alias;
+			await SendToAliasAsync(messages);
 		}
 
 		private void InvokeMessageHandlers(ApolloQueue queue, IMessage message, CancellationToken? token)

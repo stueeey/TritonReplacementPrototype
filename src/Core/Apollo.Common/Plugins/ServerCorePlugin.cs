@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
-using Apollo.Common.Infrastructure;
 
 namespace Apollo.Common.Plugins
 {
@@ -37,12 +36,12 @@ namespace Apollo.Common.Plugins
 		    var targetAlias = m.GetStringProperty(ApolloConstants.TargetAliasKey);
 		    var owner = _storage.GetAliasOwner(targetAlias);
 		    if (owner == null)
-			    Communicator.SendToClientAsync(MessageFactory.CreateNegativeAcknowledgment(m, $"Alias '{targetAlias ?? "<Alias not specified>"}' is not owned or invalid"));
+			    Communicator.SendToClientsAsync(MessageFactory.CreateNegativeAcknowledgment(m, $"Alias '{targetAlias ?? "<Alias not specified>"}' is not owned or invalid"));
 		    else
 		    {
 			    var forwardedMessage = MessageFactory.CloneMessage(m);
 			    forwardedMessage.TargetSession = owner;
-			    Communicator.SendToClientAsync(forwardedMessage);
+			    Communicator.SendToClientsAsync(forwardedMessage);
 		    }
 			return MessageStatus.Complete;
 	    }
@@ -51,7 +50,7 @@ namespace Apollo.Common.Plugins
 	    {
 		    Logger.Info($"Received registration request from {m.Identifier}");
 			if (_storage.SaveRegistration(m.ReplyToSession, m.Properties.ToDictionary(p => p.Key, p => p.Value.ToString())))
-				Communicator.SendToClientAsync(Communicator.MessageFactory.CreateAcknowledgment(m));
+				Communicator.SendToClientsAsync(Communicator.MessageFactory.CreateAcknowledgment(m));
 			return MessageStatus.Complete;
 		}
 
@@ -61,13 +60,13 @@ namespace Apollo.Common.Plugins
 			{
 				var reply = MessageFactory.CreateAcknowledgment(m);
 				reply.CopyPropertiesFrom(m);
-				Communicator.SendToClientAsync(reply);
+				Communicator.SendToClientsAsync(reply);
 				Logger.Info($"{m.Identifier} granted ownership of alias '{m.GetStringProperty(DesiredAliasKey)}'");
 			}
 			else
 			{
 				Logger.Info($"{m.Identifier} denied ownership of alias '{m.GetStringProperty(DesiredAliasKey)}'");
-				Communicator.SendToClientAsync(MessageFactory.CreateNegativeAcknowledgment(m, $"Token did not match the one registered for {m.GetStringProperty(DesiredAliasKey)}"));
+				Communicator.SendToClientsAsync(MessageFactory.CreateNegativeAcknowledgment(m, $"Token did not match the one registered for {m.GetStringProperty(DesiredAliasKey)}"));
 			}
 			return MessageStatus.Complete;
 		}
@@ -80,18 +79,18 @@ namespace Apollo.Common.Plugins
 				var lostOwnershipMessage = MessageFactory.CreateNewMessage("Lost Alias Ownership");
 				lostOwnershipMessage.TargetSession = oldOwner;
 				lostOwnershipMessage[DesiredAliasKey] = m.GetStringProperty(DesiredAliasKey);
-				Communicator.SendToClientAsync(lostOwnershipMessage);
+				Communicator.SendToClientsAsync(lostOwnershipMessage);
 			}
 			var reply = MessageFactory.CreateAcknowledgment(m);
 			reply.CopyPropertiesFrom(m);
-			Communicator.SendToClientAsync(reply);
+			Communicator.SendToClientsAsync(reply);
 			return MessageStatus.Complete;
 	    }
 
 		private void OnClaimOwnershipError(IMessage m, Exception ex)
 		{
 			Logger.Error($"Failed to grant ownership of {m.GetStringProperty(DesiredAliasKey)}", ex);
-			Communicator.SendToClientAsync(MessageFactory.CreateNegativeAcknowledgment(m, "Encountered an error processing the request"));
+			Communicator.SendToClientsAsync(MessageFactory.CreateNegativeAcknowledgment(m, "Encountered an error processing the request"));
 		}
 	}
 }

@@ -2,7 +2,6 @@ using Apollo.Common.Abstractions;
 using Apollo.ServiceBus.Mocks;
 using FluentAssertions;
 using Microsoft.Azure.ServiceBus;
-using System;
 using System.Threading.Tasks;
 using Xunit;
 

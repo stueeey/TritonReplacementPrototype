@@ -1,8 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Apollo.Common;
 using Apollo.Common.Abstractions;
-using Apollo.Common.Infrastructure;
 
 namespace Apollo.ConsoleServer
 {
@@ -19,7 +17,7 @@ namespace Apollo.ConsoleServer
 				reply.Label = m.Label;
 				reply.Properties[EchoKey] = m.Properties[EchoKey];
 				Logger.Info($"Echoing {reply.Properties[EchoKey]}");
-				Communicator.SendToClientAsync(reply);
+				Communicator.SendToClientsAsync(reply);
 				return MessageStatus.Complete;
 			}));
 		}

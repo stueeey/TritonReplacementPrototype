@@ -1,5 +1,4 @@
 ﻿using System;
-using Apollo.Common.Infrastructure;
 
 namespace Apollo.Common.Abstractions
 {

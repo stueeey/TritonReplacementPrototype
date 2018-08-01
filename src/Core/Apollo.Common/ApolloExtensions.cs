@@ -69,5 +69,9 @@ namespace Apollo.Common
 		public static string GetReasonOrPlaceholder(this IMessage message) => message.GetReason() ?? "<Reason not specified>";
 
 	    public static string GetReason(this IMessage message) => message.GetStringProperty("Reason");
+
+	    public static string GetTargetAlias(this IMessage message) => message.GetStringProperty(ApolloConstants.TargetAliasKey);
+
+	    public static void SetTargetAlias(this IMessage message, string value) => message[ApolloConstants.TargetAliasKey] = value;
     }
 }
