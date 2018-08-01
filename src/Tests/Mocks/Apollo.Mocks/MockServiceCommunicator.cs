@@ -92,7 +92,7 @@ namespace Apollo.Mocks
 				await SendRegistrationMessageAsync(message, token);
 		}
 
-		public override async Task SendRegistrationMessageAsync(params IMessage[] messages)
+		public override async Task SendToRegistrationsAsync(params IMessage[] messages)
 		{
 			await SendRegistrationMessageAsync(null, messages);
 		}

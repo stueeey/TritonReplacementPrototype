@@ -1,5 +1,4 @@
 ﻿using System;
-using Apollo.ServiceBus.Infrastructure;
 using Microsoft.Azure.ServiceBus;
 
 namespace Apollo.ServiceBus

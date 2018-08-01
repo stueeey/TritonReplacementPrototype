@@ -6,7 +6,7 @@ using Apollo.Common.Abstractions;
 
 namespace Apollo.ServiceBus.Communication
 {
-	public partial class ServiceBusCommunicator
+	public partial class __ServiceBusCommunicator
 	{
 		private Task _registrationsListenTask;
 		private CancellationTokenSource _registrationsListenCancellationToken;
@@ -50,7 +50,7 @@ namespace Apollo.ServiceBus.Communication
 		}
 
 		public Task SendRegistrationMessageAsync(IMessage message, CancellationToken? token = null) => SendRegistrationMessageAsync(token, message);
-		public Task SendRegistrationMessageAsync(params IMessage[] messages) => SendRegistrationMessageAsync(null, messages);
+		public Task SendToRegistrationsAsync(params IMessage[] messages) => SendRegistrationMessageAsync(null, messages);
 		public async Task SendRegistrationMessageAsync(CancellationToken? token, params IMessage[] messages)
 		{
 			if (!messages.Any())

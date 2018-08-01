@@ -10,7 +10,7 @@ using Microsoft.Azure.ServiceBus;
 
 namespace Apollo.ServiceBus.Communication
 {
-	public partial class ServiceBusCommunicator
+	public partial class __ServiceBusCommunicator
 	{
 		private IMessageSession _activeClientSession;
 		private Task _clientSessionListenTask;

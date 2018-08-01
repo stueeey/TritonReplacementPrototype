@@ -8,7 +8,7 @@ using Apollo.Common.Infrastructure;
 
 namespace Apollo.ServiceBus.Communication
 {
-	public partial class ServiceBusCommunicator
+	public partial class __ServiceBusCommunicator
 	{
 		private Task _aliasSessionListenTask;
 		private CancellationTokenSource _aliasSessionListenCancellationToken;

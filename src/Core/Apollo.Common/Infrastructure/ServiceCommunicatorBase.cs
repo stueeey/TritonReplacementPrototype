@@ -49,10 +49,10 @@ namespace Apollo.Common.Infrastructure
 
 		#region Implementation of IServiceCommunicator
 
-		protected abstract ILog Logger { get; }
+		protected ILog Logger { get; set; }
 
 		public ConcurrentDictionary<string, object> State { get; } = new ConcurrentDictionary<string, object>();
-		public abstract IMessageFactory MessageFactory { get; }
+		public IMessageFactory MessageFactory { get; protected set; }
 		public abstract Task SendToClientAsync(IMessage message, CancellationToken? token = null);
 		public abstract Task SendToClientAsync(CancellationToken? token, params IMessage[] messages);
 		public abstract Task SendToClientAsync(params IMessage[] messages);
@@ -61,7 +61,7 @@ namespace Apollo.Common.Infrastructure
 		public abstract Task SendToServerAsync(params IMessage[] messages);
 		public abstract Task SendRegistrationMessageAsync(IMessage message, CancellationToken? token = null);
 		public abstract Task SendRegistrationMessageAsync(CancellationToken? token, params IMessage[] messages);
-		public abstract Task SendRegistrationMessageAsync(params IMessage[] messages);
+		public abstract Task SendToRegistrationsAsync(params IMessage[] messages);
 		public abstract Task SendToAliasAsync(string alias, IMessage message, CancellationToken? token = null);
 		public abstract Task SendToAliasAsync(string alias, CancellationToken? token, params IMessage[] messages);
 		public abstract Task SendToAliasAsync(string alias, params IMessage[] messages);

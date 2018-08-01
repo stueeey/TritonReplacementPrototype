@@ -54,7 +54,7 @@ namespace Apollo.Common.Plugins
 		    if (timeOut.HasValue)
 				registrationMessage.TimeToLive = timeOut.Value;
 
-		    await Communicator.SendRegistrationMessageAsync(registrationMessage);
+		    await Communicator.SendToRegistrationsAsync(registrationMessage);
 
 		    var response = await Communicator.WaitForSingleReplyAsync(registrationMessage) ?? throw new TimeoutException("Timed out waiting for confirmation of registration");
 		    response.ThrowIfNegativeAcknowledgement();
@@ -79,7 +79,7 @@ namespace Apollo.Common.Plugins
 		    message.Properties[DesiredAliasKey] = alias;
 		    message.Properties[AliasTokenKey] = token.ToString();
 		    message.TimeToLive = TimeSpan.FromSeconds(30);
-		    await Communicator.SendRegistrationMessageAsync(message);
+		    await Communicator.SendToRegistrationsAsync(message);
 		    var response = await Communicator.WaitForSingleReplyAsync(message) ?? throw new TimeoutException("Timed out waiting for response");
 			
 		    if (response.IsPositiveAcknowledgement() && !string.IsNullOrWhiteSpace(response.GetStringProperty(AliasTokenKey)))
@@ -108,7 +108,7 @@ namespace Apollo.Common.Plugins
 		    message.Properties[DesiredAliasKey] = alias;
 		    message.Properties[AliasTokenKey] = token.ToString();
 		    message.TimeToLive = TimeSpan.FromSeconds(30);
-		    await Communicator.SendRegistrationMessageAsync(message);
+		    await Communicator.SendToRegistrationsAsync(message);
 		    var response = await Communicator.WaitForSingleReplyAsync(message) ?? throw new TimeoutException("Timed out waiting for response");
 		    if (response.IsPositiveAcknowledgement() && !string.IsNullOrWhiteSpace(response.GetStringProperty(AliasTokenKey)))
 		    {

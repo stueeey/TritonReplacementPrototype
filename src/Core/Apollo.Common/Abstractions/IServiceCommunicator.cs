@@ -21,20 +21,9 @@ namespace Apollo.Common.Abstractions
 		void AddHandler(ApolloQueue queueType, MessageHandler handler);
 		void RemoveHandler(ApolloQueue queueType, MessageHandler handler);
 
-		Task SendToClientAsync(IMessage message, CancellationToken? token = null);
-		Task SendToClientAsync(CancellationToken? token, params IMessage[] messages);
 		Task SendToClientAsync(params IMessage[] messages);
-
-		Task SendToServerAsync(IMessage message, CancellationToken? token = null);
-		Task SendToServerAsync(CancellationToken? token, params IMessage[] messages);
 		Task SendToServerAsync(params IMessage[] messages);
-
-		Task SendRegistrationMessageAsync(IMessage message, CancellationToken? token = null);
-		Task SendRegistrationMessageAsync(CancellationToken? token, params IMessage[] messages);
-		Task SendRegistrationMessageAsync(params IMessage[] messages);
-
-		Task SendToAliasAsync(string alias, IMessage message, CancellationToken? token = null);
-		Task SendToAliasAsync(string alias, CancellationToken? token, params IMessage[] messages);
+		Task SendToRegistrationsAsync(params IMessage[] messages);
 		Task SendToAliasAsync(string alias, params IMessage[] messages);
 
 		bool ListeningForClientSessionMessages { get; }

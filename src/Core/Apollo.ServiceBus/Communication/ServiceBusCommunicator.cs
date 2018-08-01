@@ -1,41 +1,24 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Apollo.Common;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
-using Apollo.ServiceBus.Infrastructure;
 using log4net;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
-using System.Reactive;
-using Apollo.Common;
 
 namespace Apollo.ServiceBus.Communication
 {
-	public partial class ServiceBusCommunicator : IServiceCommunicator
+	public class ServiceBusCommunicator : ServiceCommunicatorBase
 	{
-		protected class MessageWaitJob
-		{
-			public MessageWaitJob(DateTime expiryTimeUtc)
-			{
-				ExpiryTimeUtc = expiryTimeUtc;
-			}
-
-			public ManualResetEventSlim WaitHandle { get; } = new ManualResetEventSlim();
-			public List<IMessage> Messages { get; set; }
-			public DateTime ExpiryTimeUtc { get; set; }
-		}
-
-		private readonly IDictionary<ApolloQueue, ICollection<MessageHandler>> _handlers = new Dictionary<ApolloQueue, ICollection<MessageHandler>>();
-
 		private static readonly ILog ClassLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{ApolloConstants.LoggerInternalsPrefix}.{MethodBase.GetCurrentMethod().DeclaringType.Name}");
 		private static readonly ILog TraceLogger = LogManager.GetLogger(Assembly.GetEntryAssembly(), $"{ApolloConstants.LoggerInternalsPrefix}.Tracing");
-		protected ILog Logger { get; private set; }
 		protected ServiceBusConfiguration Configuration { get; }
 
 		private IServiceBusImplementations Impl { get; }
@@ -48,14 +31,14 @@ namespace Apollo.ServiceBus.Communication
 		protected Lazy<IMessageReceiver> AliasQueueListener => Impl.AliasQueueListener;
 		protected Lazy<IMessageSender> AliasQueueSender => Impl.AliasQueueSender;
 
-		protected ConcurrentDictionary<string, MessageWaitJob> ReplyWaitList { get; } = new ConcurrentDictionary<string, MessageWaitJob>();
+		public void SetLogger(ILog log = null) => Logger = log ?? ClassLogger;
 
 		private async Task InvokeMessageHandlers(IReceiverClient receiver, ApolloQueue queue, ServiceBusMessage message, CancellationToken? token)
 		{
 			if (message == null)
 				return;
 
-			if (_handlers.TryGetValue(queue, out var handlers))
+			if (Handlers.TryGetValue(queue, out var handlers))
 			{
 				var status = MessageStatus.Unhandled;
 				foreach (var handler in handlers.Where(h => h.PassesFilter(message)))
@@ -81,25 +64,8 @@ namespace Apollo.ServiceBus.Communication
 					await receiver.DeadLetterAsync(message.InnerMessage.SystemProperties.LockToken, $"{State[ApolloConstants.RegisteredAsKey]} is not expecting or longer waiting for this response");
 			}
 			else
-				Debug.Assert(false, "Received a message without having any handlers!");
+				Logger.Error($"Received a message on queue {queue} without having any handlers registered for that queue! (This should not be possible and implies that something has gone wrong)");
 		}
-
-		private bool CheckIfAnyoneIsWaitingForMessage(IMessage m)
-		{
-			if (string.IsNullOrEmpty(m.ResponseTo) || !ReplyWaitList.TryGetValue(m.ResponseTo, out var job)) 
-				return false;
-			job.Messages.Add(m);
-			job.WaitHandle.Set();
-			return true;
-		}
-
-		#region Public
-
-		public ConcurrentDictionary<string, object> State { get; } = new ConcurrentDictionary<string, object>();
-
-		public IMessageFactory MessageFactory { get; }
-
-		public void SetLogger(ILog log = null) => Logger = log ?? ClassLogger;
 
 		public ServiceBusCommunicator(ServiceBusConfiguration configuration, IServiceBusImplementations serviceBusImplementations = null)
 		{
@@ -109,235 +75,68 @@ namespace Apollo.ServiceBus.Communication
 			State[ApolloConstants.RegisteredAsKey] = configuration.Identifier;
 			MessageFactory = new ServiceBusMessageFactory(ServiceBusConstants.DefaultRegisteredClientsQueue, configuration.Identifier);
 			Impl = serviceBusImplementations ?? new DefaultServiceBusImplementations(configuration);
-			DiagnosticListener.AllListeners.Subscribe(delegate (DiagnosticListener listener)
-			{
-				// subscribe to the Service Bus DiagnosticSource
-				if (listener.Name == "Microsoft.Azure.ServiceBus")
-				{
-					// receive event from Service Bus DiagnosticSource
-					listener.Subscribe(delegate (KeyValuePair<string, object> @event)
-					{
-						// Log operation details once it's done
-						if (!@event.Key.EndsWith("Stop")) 
-							return;
-						var currentActivity = Activity.Current;
-						TraceLogger.Debug($"{currentActivity.OperationName} Duration: {currentActivity.Duration}\n\t{string.Join("\n\t", currentActivity.Tags)}");
-						
-					});
-				}
-			});
+			SubscribeToServiceBusTrace();
+			LogServiceBusConfiguration();
+		}
+
+		private void LogServiceBusConfiguration()
+		{
 			Logger.Info("Connecting to service bus with the following settings:");
 			Logger.Info($"Endpoint: {Configuration.ConnectionStringBuilder.Endpoint}");
 			Logger.Info($"Transport: {Configuration.ConnectionStringBuilder.TransportType}");
 			Logger.Info($"Using SAS Key: {Configuration.ConnectionStringBuilder.SasKeyName}");
 			Logger.Info($"To Entity: {Configuration.ConnectionStringBuilder.EntityPath}");
 			Logger.Info($"As: {Configuration.Identifier}");
-
-			var systemMessageHandler = new MessageHandler(null, OnMessageFirstReceived);
-			foreach (ApolloQueue queueType in Enum.GetValues(typeof(ApolloQueue)))
-				AddHandler(queueType, systemMessageHandler);
 		}
 
-		private void ListenToQueue(ApolloQueue queueType, bool listen)
+		private static void SubscribeToServiceBusTrace()
 		{
-			switch (queueType)
+			DiagnosticListener.AllListeners.Subscribe(delegate(DiagnosticListener listener)
 			{
-				case ApolloQueue.Registrations:
-					ListeningForRegistrations = listen;
-					break;
-				case ApolloQueue.ServerRequests:
-					ListeningForServerJobs = listen;
-					break;
-				case ApolloQueue.Aliases:
-					ListeningForAliasMessages = listen;
-					break;
-				case ApolloQueue.ClientSessions:
-					ListeningForClientSessionMessages = listen;
-					break;
-			}
-		}
-
-		protected virtual MessageStatus OnMessageFirstReceived(ApolloQueue sourceQueue, IMessage message, CancellationToken? token)
-		{
-			OnMessageReceived(message, sourceQueue);
-			return CheckIfAnyoneIsWaitingForMessage(message) 
-				? MessageStatus.Complete 
-				: MessageStatus.Unhandled;
-		}
-
-		public T GetState<T>(string key)
-		{
-			return State.TryGetValue(key, out var value)
-				? (T)value
-				: default(T);
-		}
-
-		public void SignalPluginEvent(string eventName, object state)
-		{
-			PluginEvent?.Invoke(eventName, state);
-		}
-
-		public void RemoveListenersForPlugin(ApolloPlugin plugin)
-		{
-			foreach (var queueType in _handlers)
-			{
-				foreach (var itemToRemove in queueType.Value.Where(h => h.Plugin == plugin).ToArray())
-					RemoveHandler(queueType.Key, itemToRemove);
-			}
-		}
-
-		public bool ListeningForClientSessionMessages
-		{
-			get => _listenForClientSessionMessages;
-			private set => HandleListenForClientMessagesChanged(value);
-		}
-
-		public bool ListeningForRegistrations
-		{
-			get => _listenForRegistrations;
-			private set => HandleListenForRegistrationsChanged(value);
-		}
-
-		public bool ListeningForServerJobs
-		{
-			get => _listenForServerJobs;
-			private set => HandleListenForServerJobsChanged(value);
-		}
-
-		public bool ListeningForAliasMessages
-		{
-			get => _listenForAliasSessionMessages;
-			private set => HandleListenForAliasMessagesChanged(value);
-		}
-
-		public event PluginEventDelegate PluginEvent;
-
-		private void OnMessageSent(IMessage message, ApolloQueue queue)
-		{
-			try
-			{
-				AnyMessageSent?.Invoke(message, queue);
-			}
-			catch (Exception ex)
-			{
-				Logger.Error($"Failed to run handlers subscribed to {nameof(OnMessageSent)} as part of sending to the {queue} queue", ex);
-			}
-		}
-
-		private void OnMessageReceived(IMessage message, ApolloQueue queue)
-		{
-			try
-			{
-				AnyMessageReceived?.Invoke(message, queue);
-			}
-			catch (Exception ex)
-			{
-				Logger.Error($"Failed to run handlers subscribed to {nameof(OnMessageReceived)} as part of receiving a message from the {queue} queue", ex);
-			}
-		}
-
-		public event OnMessageSent AnyMessageSent;
-		public event OnMessageReceived AnyMessageReceived;
-		public Task<ICollection<IMessage>> WaitForRepliesAsync(ReplyOptions options)
-		{
-			throw new NotImplementedException();
-		}
-
-		public Task<List<IMessage>> WaitForRepliesTo(IMessage message, CancellationToken? token = null, TimeSpan? timeout = null, Predicate<IMessage> shouldStopWaiting = null)
-		{
-			return Task.Run(() =>
-			{
-				if (message == null)
-					throw new ArgumentNullException(nameof(message));
-				var replyQueue = GetReplyQueueForMessage(message) ?? throw new ArgumentException($"Cannot wait for a reply to a message which does not have a valid {nameof(IMessage.ReplyToEntity)}");
-				var calculatedTimeout = (timeout ?? message.TimeToLive);
-				if (calculatedTimeout > ApolloConstants.MaximumReplyWaitTime)
-					calculatedTimeout = ApolloConstants.MaximumReplyWaitTime;
-				calculatedTimeout = calculatedTimeout == TimeSpan.Zero
-					? TimeSpan.FromSeconds(10)
-					: calculatedTimeout;
-				var job = new MessageWaitJob(DateTime.UtcNow + calculatedTimeout);
-				ReplyWaitList.TryAdd(message.Identifier, job);
-				var replyHandlerToForceListening = MessageHandler.CreateFakeHandler();
-				AddHandler(replyQueue, replyHandlerToForceListening);
-				try
+				// subscribe to the Service Bus DiagnosticSource
+				if (listener.Name == "Microsoft.Azure.ServiceBus")
 				{
-					if (token.HasValue)
-						job.WaitHandle.Wait(calculatedTimeout, token.Value);
-					else
-						job.WaitHandle.Wait(calculatedTimeout);
-					return ReplyWaitList.TryGetValue(message.Identifier, out var reply)
-						? reply.Messages
-						: null;
+					// receive event from Service Bus DiagnosticSource
+					listener.Subscribe(delegate(KeyValuePair<string, object> @event)
+					{
+						// Log operation details once it's done
+						if (!@event.Key.EndsWith("Stop"))
+							return;
+						var currentActivity = Activity.Current;
+						TraceLogger.Debug(
+							$"{currentActivity.OperationName} Duration: {currentActivity.Duration}\n\t{string.Join("\n\t", currentActivity.Tags)}");
+					});
 				}
-				catch (Exception ex)
-				{
-					Logger.Warn("Encountered an error while waiting for a reply message", ex);
-				}
-				finally
-				{
-					ReplyWaitList.TryRemove(message.Identifier, out _);
-					RemoveHandler(replyQueue, replyHandlerToForceListening);
-				}
-				return null;
 			});
 		}
 
-		private ApolloQueue? GetReplyQueueForMessage(IMessage message)
-		{
-			if (StringComparer.OrdinalIgnoreCase.Equals(message.ReplyToEntity, Configuration.ClientAliasesQueue))
-				return ApolloQueue.Aliases;
-			if (StringComparer.OrdinalIgnoreCase.Equals(message.ReplyToEntity, Configuration.RegisteredClientsQueue))
-				return ApolloQueue.ClientSessions;
-			if (StringComparer.OrdinalIgnoreCase.Equals(message.ReplyToEntity, Configuration.RegistrationQueue))
-				return ApolloQueue.Registrations;
-			if (StringComparer.OrdinalIgnoreCase.Equals(message.ReplyToEntity, Configuration.ServerRequestsQueue))
-				return ApolloQueue.ServerRequests;
-			return null;
-		}
+		#region IServiceCommunicator
 
-		public void AddHandler(ApolloQueue queueType, MessageHandler handler)
+		private async Task SendMessageAsync(ApolloQueue queue, Lazy<IMessageSender> sender, IMessage[] messages)
 		{
-			if (handler == null)
-				throw new ArgumentNullException(nameof(handler));
-			lock (_handlers)
+			if (!messages.Any())
+				throw new InvalidOperationException($"Tried to send an empty array of messages to {queue}");
+			if (!messages.All(m => m is ServiceBusMessage))
+				throw new InvalidOperationException($"{GetType().Name} cannot send messages which do not inherit from {nameof(ServiceBusMessage)}");
+			try
 			{
-				if (_handlers.ContainsKey(queueType))
-					_handlers[queueType].Add(handler);
-				else
-					_handlers.Add(queueType, new List<MessageHandler> { handler });
-				if (_handlers[queueType].Count > 1)
-					ListenToQueue(queueType, true);
+				await sender.Value.SendAsync(messages.Select(m => ((ServiceBusMessage) m).InnerMessage).ToArray());
+				foreach (var message in messages)
+					OnMessageSent(message, queue);
+			}
+			catch (Exception ex)
+			{
+				Logger.Warn(ex);
+				throw;
 			}
 		}
 
-		public void RemoveHandler(ApolloQueue queueType, MessageHandler handler)
-		{
-			if (handler == null)
-				throw new ArgumentNullException(nameof(handler));
-			lock (_handlers)
-			{
-				if (!_handlers.ContainsKey(queueType))
-					return;
-				_handlers[queueType].Remove(handler);
-				if (!_handlers[queueType].Any())
-					_handlers.Remove(queueType);
-				else if (_handlers[queueType].Count <= 1)
-					ListenToQueue(queueType, false);
-			}
-		}
-
+		#region Sending
+		public override Task SendToServerAsync(params IMessage[] messages) => SendMessageAsync(ApolloQueue.ServerRequests, ServerQueueSender, messages);
+		public override Task SendToClientAsync(params IMessage[] messages) => SendMessageAsync(ApolloQueue.ServerRequests, ServerQueueSender, messages);
+		public override Task SendToRegistrationAsync(params IMessage[] messages) => SendMessageAsync(ApolloQueue.ServerRequests, ServerQueueSender, messages);
+		public override Task SendToServerAsync(params IMessage[] messages) => SendMessageAsync(ApolloQueue.ServerRequests, ServerQueueSender, messages);
 		#endregion
-
-		#region IDisposable
-
-		public void Dispose()
-		{
-			ListeningForClientSessionMessages = false;
-			ListeningForRegistrations = false;
-			ListeningForServerJobs = false;
-			Configuration.Connection?.CloseAsync().Wait();
-		}
 
 		#endregion
 	}

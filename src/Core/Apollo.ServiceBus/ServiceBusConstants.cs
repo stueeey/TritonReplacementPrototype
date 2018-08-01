@@ -1,4 +1,4 @@
-﻿namespace Apollo.ServiceBus.Infrastructure
+﻿namespace Apollo.ServiceBus
 {
     public static class ServiceBusConstants
     {
