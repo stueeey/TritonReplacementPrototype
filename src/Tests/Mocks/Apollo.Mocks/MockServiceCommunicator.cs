@@ -63,7 +63,6 @@ namespace Apollo.Mocks
 				_service.Enqueue(message, ApolloQueue.ServerRequests, message.TargetSession);
 			}
 		}
-
 		
 		public override async Task SendToRegistrationsAsync(params IMessage[] messages)
 		{
@@ -87,17 +86,6 @@ namespace Apollo.Mocks
 				OnMessageSent(message, ApolloQueue.Aliases);
 				_service.Enqueue(message, ApolloQueue.Aliases, null);
 			}
-		}
-
-		public override async Task SendToAliasAsync(string alias, params IMessage[] messages)
-		{
-			if (messages == null)
-				return;
-			if (string.IsNullOrWhiteSpace(alias))
-				throw new ArgumentException("client identifier cannot be blank or null", nameof(alias));
-			foreach (var message in messages)
-				message.TargetSession = alias;
-			await SendToAliasAsync(messages);
 		}
 
 		private void InvokeMessageHandlers(ApolloQueue queue, IMessage message, CancellationToken? token)
@@ -179,6 +167,23 @@ namespace Apollo.Mocks
 				_service.GetQueue(ApolloQueue.Aliases, _identifier).MessageArrived += OnAliasMessageArrived;
 			else
 				_service.GetQueue(ApolloQueue.Aliases, _identifier).MessageArrived -= OnAliasMessageArrived;
+		}
+
+		protected override string GetQueueName(ApolloQueue queue)
+		{
+			switch (queue)
+			{
+				case ApolloQueue.Registrations:
+					return RegistrationQueueName;
+				case ApolloQueue.ServerRequests:
+					return ServerQueueName;
+				case ApolloQueue.Aliases:
+					return AliasQueueName;
+				case ApolloQueue.ClientSessions:
+					return ClientQueueName;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(queue), queue, null);
+			}
 		}
 
 		protected override TimeSpan MaxReplyWaitTime { get; } = TimeSpan.FromSeconds(1);

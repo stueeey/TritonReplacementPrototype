@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Ninject;
 
@@ -27,8 +28,8 @@ namespace Apollo.Server.Kubernetes
 		public Startup(IConfiguration configuration)
 		{
 			Configuration = configuration;
-			var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
-			XmlConfigurator.Configure(logRepository, new FileInfo("Logging.config"));
+			//var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
+			//XmlConfigurator.Configure(logRepository, new FileInfo("Logging.config"));
 		}
 
 		private static StandardKernel SetupIoc()
@@ -56,7 +57,7 @@ namespace Apollo.Server.Kubernetes
 				}
 			};
 			var container = new StandardKernel(implementations);
-			container.Bind<IRegistrationStorage>().To<InMemoryRegistrationStorage>().InSingletonScope();
+			container.Bind<IApolloServerRepository>().To<InMemoryApolloServerRepository>().InSingletonScope();
 			return container;
 		}
 
@@ -78,12 +79,13 @@ namespace Apollo.Server.Kubernetes
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
 			if (env.IsDevelopment())
 			{
 				app.UseDeveloperExceptionPage();
 			}
+			loggerFactory.AddLog4Net("Logging.config", true);
 			app.UseMvc();
 		}
 	}

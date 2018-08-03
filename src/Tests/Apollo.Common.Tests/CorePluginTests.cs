@@ -22,7 +22,7 @@ namespace Apollo.Common.Tests
 		{
 			using (var service = new MockService(_logger))
 			{
-				var serverStorage = new InMemoryRegistrationStorage();
+				var serverStorage = new InMemoryApolloServerRepository();
 				var client = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
 				await client.RegisterAsync(new Dictionary<string, string> {{"Answer", "Bloop"}});
@@ -38,7 +38,7 @@ namespace Apollo.Common.Tests
 			var uk123Token = Guid.NewGuid();
 			using (var service = new MockService(_logger))
 			{
-				var serverStorage = new InMemoryRegistrationStorage();
+				var serverStorage = new InMemoryApolloServerRepository();
 				var client = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
 				(await client.RegisterAsync()).Should().NotBeNullOrEmpty();
@@ -52,7 +52,7 @@ namespace Apollo.Common.Tests
 			var uk123Token = Guid.NewGuid();
 			using (var service = new MockService(_logger))
 			{
-				var serverStorage = new InMemoryRegistrationStorage();
+				var serverStorage = new InMemoryApolloServerRepository();
 				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var client2 = new ApolloClient(new MockServiceCommunicator("Client2", service, _logger));
 				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
@@ -72,7 +72,7 @@ namespace Apollo.Common.Tests
 			var practiceId = "UK123";
 			using (var service = new MockService(_logger))
 			{
-				var serverStorage = new InMemoryRegistrationStorage();
+				var serverStorage = new InMemoryApolloServerRepository();
 				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var client2 = new ApolloClient(new MockServiceCommunicator("Client2", service, _logger));
 				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
@@ -94,7 +94,7 @@ namespace Apollo.Common.Tests
 			var practiceId = "UK123";
 			using (var service = new MockService(_logger))
 			{
-				var serverStorage = new InMemoryRegistrationStorage();
+				var serverStorage = new InMemoryApolloServerRepository();
 				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var client2 = new ApolloClient(new MockServiceCommunicator("Client2", service, _logger));
 				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
@@ -103,7 +103,8 @@ namespace Apollo.Common.Tests
 
 				(await client1.RequestOwnershipOfAliasAsync(practiceId, client1Token)).Should().Be(client1Token, "client 1 was the first to request ownership of UK123");
 
-				var result = (await client1.GetPlugin<ClientCorePlugin>().PingAlias(practiceId));
+				var result = await client1.GetPlugin<ClientCorePlugin>().PingAlias(practiceId);
+				result.RethrowCaughtException();
 				result.Result.Should().Be(PingStats.PingResult.Success);
 			}
 		}
@@ -114,14 +115,15 @@ namespace Apollo.Common.Tests
 			var practiceId = "UK123";
 			using (var service = new MockService(_logger))
 			{
-				var serverStorage = new InMemoryRegistrationStorage();
+				var serverStorage = new InMemoryApolloServerRepository();
 				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var client2 = new ApolloClient(new MockServiceCommunicator("Client2", service, _logger));
 				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
 				(await client1.RegisterAsync()).Should().NotBeNullOrEmpty();
 				(await client2.RegisterAsync()).Should().NotBeNullOrEmpty();
 
-				var result = (await client1.GetPlugin<ClientCorePlugin>().PingAlias(practiceId));
+				var result = await client1.GetPlugin<ClientCorePlugin>().PingAlias(practiceId);
+				result.RethrowCaughtException();
 				result.Result.Should().Be(PingStats.PingResult.AddresseeNotFound);
 			}
 		}
@@ -131,12 +133,13 @@ namespace Apollo.Common.Tests
 		{
 			using (var service = new MockService(_logger))
 			{
-				var serverStorage = new InMemoryRegistrationStorage();
+				var serverStorage = new InMemoryApolloServerRepository();
 				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
 				(await client1.RegisterAsync()).Should().NotBeNullOrEmpty();
 
 				var result = await client1.GetPlugin<ClientCorePlugin>().PingServer();
+				result.RethrowCaughtException();
 				result.Result.Should().Be(PingStats.PingResult.Success);
 			}
 		}
@@ -148,6 +151,7 @@ namespace Apollo.Common.Tests
 			{
 				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var result = await client1.GetPlugin<ClientCorePlugin>().PingServer();
+				result.RethrowCaughtException();
 				result.Result.Should().Be(PingStats.PingResult.Timeout);
 			}
 		}
@@ -157,7 +161,7 @@ namespace Apollo.Common.Tests
 		{
 			using (var service = new MockService(_logger))
 			{
-				var serverStorage = new InMemoryRegistrationStorage();
+				var serverStorage = new InMemoryApolloServerRepository();
 				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 				var client2 = new ApolloClient(new MockServiceCommunicator("Client2", service, _logger));
 				var server = new ApolloServer(new MockServiceCommunicator("Server1", service, _logger), serverStorage);
@@ -165,6 +169,7 @@ namespace Apollo.Common.Tests
 				(await client2.RegisterAsync()).Should().NotBeNullOrEmpty();
 
 				var result = await client1.GetPlugin<ClientCorePlugin>().PingClient(client2.Identifier);
+				result.RethrowCaughtException();
 				result.Result.Should().Be(PingStats.PingResult.Success);
 				
 			}
@@ -178,6 +183,7 @@ namespace Apollo.Common.Tests
 				var client1 = new ApolloClient(new MockServiceCommunicator("Client1", service, _logger));
 
 				var result = await client1.GetPlugin<ClientCorePlugin>().PingClient(client1.Identifier);
+				result.RethrowCaughtException();
 				result.Result.Should().Be(PingStats.PingResult.Success);
 
 			}

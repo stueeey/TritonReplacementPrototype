@@ -24,6 +24,9 @@ namespace Apollo.Common.Plugins
 			Communicator.AddHandler(ApolloQueue.ClientSessions, new MessageHandler(this, LostOwnershipLabel, LostOwnershipNotificationReceived));
 		}
 
+		/// <summary>
+		/// Fired if we lose ownership of an alias
+		/// </summary>
 	    public event Action<string> LostOwnershipOfAlias;
 
 	    private MessageStatus LostOwnershipNotificationReceived(ApolloQueue queue, IMessage m, CancellationToken? cancelToken)
@@ -36,13 +39,15 @@ namespace Apollo.Common.Plugins
 		    return MessageStatus.Complete;
 	    }
 
-		/// <summary>
-		/// 
+	    /// <summary>
+		/// Registers with the server so that it knows we exist
 		/// </summary>
-		/// <param name="metadata"></param>
-		/// <param name="timeOut"></param>
-		/// <returns></returns>
-		public async Task<string> RegisterAsync(IDictionary<string, string> metadata = null, TimeSpan? timeOut = null)
+		/// <param name="metadata">Information about this client</param>
+		/// <param name="cancellationToken">A token which can be used to cancel waiting</param>
+		/// <returns>An awaitable task which will return the client's ID</returns>
+		/// <exception cref="TimeoutException">If there is no reply</exception>
+		/// <exception cref="NakException">If the server says no</exception>
+		public async Task<string> RegisterAsync(IDictionary<string, string> metadata = null, CancellationToken? cancellationToken = null)
 	    {
 		    var registrationMessage = Communicator.MessageFactory.CreateNewMessage(ApolloConstants.RegistrationKey);
 		    if (metadata != null)
@@ -50,12 +55,9 @@ namespace Apollo.Common.Plugins
 			    foreach (var entry in metadata)
 				    registrationMessage[entry.Key] = entry.Value;
 		    }
-		    if (timeOut.HasValue)
-				registrationMessage.TimeToLive = timeOut.Value;
 
 		    await Communicator.SendToRegistrationsAsync(registrationMessage);
-
-		    var response = await Communicator.WaitForSingleReplyAsync(registrationMessage) ?? throw new TimeoutException("Timed out waiting for confirmation of registration");
+		    var response = await Communicator.WaitForSingleReplyAsync(registrationMessage, cancellationToken) ?? throw new TimeoutException("Timed out waiting for confirmation of registration");
 		    response.ThrowIfNegativeAcknowledgement();
 		    Logger.Info($"Received confirmation of registration as {response.TargetSession}");
 			Communicator.SignalPluginEvent(RegisteredEventName, response.TargetSession);

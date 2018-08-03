@@ -14,8 +14,8 @@ namespace Apollo.Common.Plugins
 
 		private const string RequestOwnershipLabel = "Request Alias Ownership";
 	    private const string TakeAliasLabel = "Demand Alias Ownership";
-		private readonly IRegistrationStorage _storage;
-	    public ServerCorePlugin(IRegistrationStorage storage)
+		private readonly IApolloServerRepository _storage;
+	    public ServerCorePlugin(IApolloServerRepository storage)
 	    {
 			_storage = storage;
 	    }

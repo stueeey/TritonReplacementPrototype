@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.ExceptionServices;
 using System.Text;
 
 namespace Apollo.Common.Plugins
@@ -15,7 +16,7 @@ namespace Apollo.Common.Plugins
 		}
 
 		public PingResult Result { get; set;}
-		public Exception Exception { get; set;}
+		public ExceptionDispatchInfo Exception { get; set;}
 		public DateTime TimeRequestEnqueuedUtc { get; set; }
 		public DateTime TimeResponseEnqueuedUtc { get; set; }
 
@@ -49,11 +50,16 @@ namespace Apollo.Common.Plugins
 					return "Target alias is not currently owned";
 				case PingResult.Exception:
 					return verbose 
-						? Exception.ToString() 
-						: Exception.Message;
+						? Exception.SourceException.ToString() 
+						: Exception.SourceException.Message;
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
+		}
+
+		public void RethrowCaughtException()
+		{
+			Exception?.Throw();
 		}
 	}
 }

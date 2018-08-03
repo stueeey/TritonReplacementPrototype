@@ -21,7 +21,7 @@ namespace Apollo.ConsoleServer
 	        var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
 	        XmlConfigurator.Configure(logRepository, new FileInfo("Logging.config"));
 	        var container = SetupIoc();
-	        container.Bind<IRegistrationStorage>().To<InMemoryRegistrationStorage>().InSingletonScope();
+	        container.Bind<IApolloServerRepository>().To<InMemoryApolloServerRepository>().InSingletonScope();
 	        var server = container.Get<IApolloServer>();
 	        Console.Title = $"Server Console [{server.Identifier}]";
 	        Console.ReadKey();

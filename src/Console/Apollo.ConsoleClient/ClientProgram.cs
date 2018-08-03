@@ -51,26 +51,21 @@ namespace Apollo.ConsoleClient
 				    return;
 				if (CommandEquals(command, "ping self"))
 				{
-					while (true)//for (var i = 0; i < 5; i++)
+					for (var i = 0; i < 5; i++)
 					{
 						var result = await client.GetPlugin<ClientCorePlugin>().PingClient(client.Identifier);
 						Console.WriteLine(result.ToString());
-						Thread.Sleep(3000);
+						Thread.Sleep(1000);
 					}
-					//continue;
 				}
 				if (CommandEquals(command, "ping server"))
 				{
-					for (int i = 0; i < 3; i++)
+					for (var i = 0; i < 5; i++)
 					{
-							while (true)//for (var i = 0; i < 5; i++)
-							{
-								var result = await client.GetPlugin<ClientCorePlugin>().PingServer(TimeSpan.FromSeconds(3));
-								Console.WriteLine(result.ToString());
-								//Thread.Sleep(3000);
-							}
+						var result = await client.GetPlugin<ClientCorePlugin>().PingServer(TimeSpan.FromSeconds(3));
+						Console.WriteLine(result.ToString());
+						Thread.Sleep(1000);
 					}
-					//continue;
 				}
 				if (command?.StartsWith("ping alias") ?? false)
 				{

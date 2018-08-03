@@ -39,8 +39,8 @@ namespace Apollo.ServiceBus.Communication
 		    RegistrationSender    = new Lazy<IMessageSender>  (() => new MessageSender(   _configuration.Connection, _configuration.RegistrationQueue,      _configuration.Connection.RetryPolicy));
 		    ServerQueueListener   = new Lazy<IMessageReceiver>(() => new MessageReceiver( _configuration.Connection, _configuration.ServerRequestsQueue,    ReceiveMode.PeekLock, _configuration.Connection.RetryPolicy));
 		    ServerQueueSender     = new Lazy<IMessageSender>  (() => new MessageSender(   _configuration.Connection, _configuration.ServerRequestsQueue,    _configuration.Connection.RetryPolicy));
-		    ClientSessionListener = new Lazy<ISessionClient>  (() => new SessionClient(   _configuration.Connection, _configuration.RegisteredClientsQueue, ReceiveMode.PeekLock, _configuration.Connection.RetryPolicy));
-		    ClientSessionSender   = new Lazy<IMessageSender>  (() => new MessageSender(   _configuration.Connection, _configuration.RegisteredClientsQueue, _configuration.Connection.RetryPolicy));
+		    ClientSessionListener = new Lazy<ISessionClient>  (() => new SessionClient(   _configuration.Connection, _configuration.ClientsQueue, ReceiveMode.PeekLock, _configuration.Connection.RetryPolicy));
+		    ClientSessionSender   = new Lazy<IMessageSender>  (() => new MessageSender(   _configuration.Connection, _configuration.ClientsQueue, _configuration.Connection.RetryPolicy));
 		    AliasQueueListener    = new Lazy<IMessageReceiver>(() => new MessageReceiver( _configuration.Connection, _configuration.ClientAliasesQueue,     ReceiveMode.PeekLock, _configuration.Connection.RetryPolicy));
 		    AliasQueueSender	  = new Lazy<IMessageSender>  (() => new MessageSender(   _configuration.Connection, _configuration.ClientAliasesQueue,     _configuration.Connection.RetryPolicy));
 	    }

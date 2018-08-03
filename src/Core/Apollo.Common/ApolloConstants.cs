@@ -15,9 +15,9 @@ namespace Apollo.Common
 	    public const string PositiveAcknowledgement = "<ACK>";
 	    public const string NegativeAcknowledgement = "<NACK>";
 	    public const string EndOfMessages = "<EOM>";
-	    public const string RegistrationKey = "Registration";
 	    public const string RegisteredAsKey = "Registered As";
-	    public const string TargetAliasKey = "Target Alias";
+	    internal const string RegistrationKey = "Registration";
+	    internal const string TargetAliasKey = "Target Alias";
 
 		// Standard state labels
 	    public const string NumberOfMessagesSentToRegistrations   = "# Messages Sent to Registrations";

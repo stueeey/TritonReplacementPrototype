@@ -73,7 +73,7 @@ namespace Apollo.Common.Infrastructure
 			if (string.IsNullOrWhiteSpace(alias))
 				throw new ArgumentException("client identifier cannot be blank or null", nameof(alias));
 			foreach (var message in messages)
-				message.TargetSession = alias;
+				message.SetTargetAlias(alias);
 			await SendToAliasAsync(messages);
 		}
 
@@ -142,6 +142,25 @@ namespace Apollo.Common.Infrastructure
 		public event OnMessageSent AnyMessageSent;
 		public event OnMessageReceived AnyMessageReceived;
 
+		public void SetReplyAddress(IMessage message, ApolloQueue queue, string recipientIdentifier = null)
+		{
+			message.ReplyToEntity = GetQueueName(queue);
+			switch (queue)
+			{
+				case ApolloQueue.Registrations:
+				case ApolloQueue.ServerRequests:
+					break;
+				case ApolloQueue.Aliases:
+					message.SetTargetAlias(recipientIdentifier);
+					break;
+				case ApolloQueue.ClientSessions:
+					message.TargetSession = recipientIdentifier;
+					break;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(queue), queue, null);
+			}
+		}
+
 		public Task<ICollection<IMessage>> WaitForRepliesAsync(ReplyOptions options)
 		{
 			return Task.Run(() => WaitForReplies(options));
@@ -151,6 +170,7 @@ namespace Apollo.Common.Infrastructure
 
 		protected abstract TimeSpan MaxReplyWaitTime { get; }
 		protected abstract ApolloQueue? ParseQueue(string queueName);
+		protected abstract string GetQueueName(ApolloQueue queue);
 
 		protected readonly IDictionary<ApolloQueue, ICollection<MessageHandler>> Handlers = new Dictionary<ApolloQueue, ICollection<MessageHandler>>();
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
 using Apollo.Common.Infrastructure;
@@ -37,9 +38,15 @@ namespace Apollo.Common
 		    return GetPlugin<ClientCorePlugin>().RequestOwnershipOfAliasAsync(alias, token);
 	    }
 
-	    public Task<string> RegisterAsync(IDictionary<string, string> metadata = null, TimeSpan? timeout = null)
+	    public Task<string> RegisterAsync(IDictionary<string, string> metadata = null, CancellationToken? cancellationToken = null)
 	    {
-		    return GetPlugin<ClientCorePlugin>().RegisterAsync(metadata, timeout);
+		    return GetPlugin<ClientCorePlugin>().RegisterAsync(metadata, cancellationToken);
+	    }
+
+	    public event Action<string> LostOwnershipOfAlias
+	    {
+			add => GetPlugin<ClientCorePlugin>().LostOwnershipOfAlias += value;
+		    remove => GetPlugin<ClientCorePlugin>().LostOwnershipOfAlias -= value;
 	    }
 
 	    public Task<Guid> DemandOwnershipOfAliasAsync(string alias, Guid token)

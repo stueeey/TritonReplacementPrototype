@@ -35,7 +35,7 @@ namespace Apollo.Common
 		public int MaxRepliesToWaitFor { get; set; } = int.MaxValue;
 		public TimeSpan Timeout { get; set; }
 		public CancellationToken? CancelToken { get; set; }
-		public Predicate<IMessage> IsTerminatingMessage { get; set; } = m => m.LabelMatches(ApolloConstants.EndOfMessages);
+		public Predicate<IMessage> IsTerminatingMessage { get; set; } = ApolloExtensions.IsTerminatingMessage;
 		public string ReplyQueue { get; }
 		public string MessageIdentifier { get; }
 	}

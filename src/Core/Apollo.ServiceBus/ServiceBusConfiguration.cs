@@ -34,7 +34,7 @@ namespace Apollo.ServiceBus
 
 	    public ServiceBusConnectionStringBuilder ConnectionStringBuilder { get; }
 	    public ServiceBusConnection Connection { get; private set; }
-	    public string RegisteredClientsQueue  { get; set; } = ServiceBusConstants.DefaultRegisteredClientsQueue;
+	    public string ClientsQueue            { get; set; } = ServiceBusConstants.DefaultRegisteredClientsQueue;
 	    public string ServerRequestsQueue     { get; set; } = ServiceBusConstants.DefaultServerRequestsQueue;
 	    public string RegistrationQueue       { get; set; } = ServiceBusConstants.DefaultRegistrationQueue;
 	    public string ClientAliasesQueue      { get; set; } = ServiceBusConstants.DefaultClientAliasesQueue;

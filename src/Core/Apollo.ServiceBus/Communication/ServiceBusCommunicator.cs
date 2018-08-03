@@ -118,8 +118,8 @@ namespace Apollo.ServiceBus.Communication
 
 		private async Task SendMessageAsync(ApolloQueue queue, Lazy<IMessageSender> sender, IMessage[] messages)
 		{
-			if (!messages.Any())
-				throw new InvalidOperationException($"Tried to send an empty array of messages to {queue}");
+			if (messages == null || !messages.Any())
+				return;
 			if (!messages.All(m => m is ServiceBusMessage))
 				throw new InvalidOperationException($"{GetType().Name} cannot send messages which do not inherit from {nameof(ServiceBusMessage)}");
 			try
@@ -403,13 +403,30 @@ namespace Apollo.ServiceBus.Communication
 		{
 			if (StringComparer.OrdinalIgnoreCase.Equals(queueName, Configuration.ClientAliasesQueue))
 				return ApolloQueue.Aliases;
-			if (StringComparer.OrdinalIgnoreCase.Equals(queueName, Configuration.RegisteredClientsQueue))
+			if (StringComparer.OrdinalIgnoreCase.Equals(queueName, Configuration.ClientsQueue))
 				return ApolloQueue.ClientSessions;
 			if (StringComparer.OrdinalIgnoreCase.Equals(queueName, Configuration.RegistrationQueue))
 				return ApolloQueue.Registrations;
 			if (StringComparer.OrdinalIgnoreCase.Equals(queueName, Configuration.ServerRequestsQueue))
 				return ApolloQueue.ServerRequests;
 			return null;
+		}
+
+		protected override string GetQueueName(ApolloQueue queue)
+		{
+			switch (queue)
+			{
+				case ApolloQueue.Registrations:
+					return Configuration.RegistrationQueue;
+				case ApolloQueue.ServerRequests:
+					return Configuration.ServerRequestsQueue;
+				case ApolloQueue.Aliases:
+					return Configuration.ClientAliasesQueue;
+				case ApolloQueue.ClientSessions:
+					return Configuration.ClientsQueue;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(queue), queue, null);
+			}
 		}
 
 		#endregion

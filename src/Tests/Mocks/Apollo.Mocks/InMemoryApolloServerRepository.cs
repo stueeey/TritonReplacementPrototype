@@ -5,7 +5,7 @@ using Apollo.Common.Abstractions;
 
 namespace Apollo.Mocks
 {
-	public class InMemoryRegistrationStorage : IRegistrationStorage
+	public class InMemoryApolloServerRepository : IApolloServerRepository
 	{
 		private class AliasDetails
 		{

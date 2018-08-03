@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Apollo.Common.Abstractions
 {
-	public interface IRegistrationStorage
+	public interface IApolloServerRepository
 	{
 		bool SaveRegistration(string identifier, IDictionary<string, string> metadata);
 		IDictionary<string, string> LoadRegistration(string identifier);

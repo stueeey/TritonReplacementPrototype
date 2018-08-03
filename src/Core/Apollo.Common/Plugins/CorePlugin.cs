@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Apollo.Common.Abstractions;
@@ -31,16 +32,12 @@ namespace Apollo.Common.Plugins
 
 	    public Task<PingStats> PingClient(string identifier, TimeSpan? timeOut = null, CancellationToken? cancellationToken = null)
 	    {
-		    return SendPingMessage(timeOut, cancellationToken, async (m) =>
-		    {
-			    m.TargetSession = identifier;
-			    await Communicator.SendToClientsAsync(m);
-		    });
+		    return SendPingMessage(timeOut, cancellationToken, m => Communicator.SendToClientAsync(identifier, m));
 	    }
 
 	    public Task<PingStats> PingAlias(string alias, TimeSpan? timeOut = null, CancellationToken? cancellationToken = null)
 	    {
-		    return SendPingMessage(timeOut, cancellationToken, m => Communicator.SendToAliasAsync(m));
+		    return SendPingMessage(timeOut, cancellationToken, m => Communicator.SendToAliasAsync(alias, m));
 	    }
 
 	    private async Task<PingStats> SendPingMessage(TimeSpan? timeOut, CancellationToken? cancellationToken, Func<IMessage, Task> sendMessage)
@@ -63,7 +60,6 @@ namespace Apollo.Common.Plugins
 					    retVal.TimeResponseEnqueuedUtc = response.EnqueuedTimeUtc;
 					    retVal.TimeRequestEnqueuedUtc = (DateTime) (response[nameof(PingStats.TimeRequestEnqueuedUtc)] ?? DateTime.MinValue);
 					    retVal.ServedBy = response.GetStringProperty(nameof(PingStats.ServedBy));
-
 					    break;
 				    default:
 						retVal.Result = PingStats.PingResult.Timeout;
@@ -73,7 +69,7 @@ namespace Apollo.Common.Plugins
 		    catch (Exception ex)
 		    {
 			    retVal.Result = PingStats.PingResult.Exception;
-				retVal.Exception = ex;
+				retVal.Exception = ExceptionDispatchInfo.Capture(ex);
 		    }
 		    return retVal;
 	    }
